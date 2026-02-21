@@ -1,0 +1,38 @@
+import cv2
+import numpy as np
+
+class MaskPostprocess:
+    def __init__(self, *steps):
+        self.steps = steps
+        
+    def __call__(self, mask):
+        for step in self.steps:
+            mask = step(mask)
+        return mask
+
+
+class MedianFilter:
+    def __init__(self, kernel_size: int):
+        self.kernel_size = kernel_size
+    
+    def __call__(self, mask: np.ndarray):
+        u8mask = mask.astype(np.uint8)
+        u8mask = cv2.medianBlur(u8mask, self.kernel_size)
+        return u8mask.astype(bool)
+
+
+class RemoveSmallBlobs:
+    def __init__(self, min_size: int):
+        self.min_size = min_size
+    
+    def __call__(self, mask: np.ndarray):
+        u8mask = mask.astype(np.uint8)
+        nb_blobs, im_with_separated_blobs, stats, _ = cv2.connectedComponentsWithStats(u8mask)
+        
+        sizes = stats[:, cv2.CC_STAT_AREA]
+        resulting_mask = np.zeros_like(im_with_separated_blobs)
+        for index_blob in range(1, nb_blobs):
+            if sizes[index_blob] >= self.min_size:
+                resulting_mask[im_with_separated_blobs == index_blob] = 255
+
+        return resulting_mask.astype(bool)
