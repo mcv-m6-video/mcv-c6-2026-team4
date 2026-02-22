@@ -13,8 +13,19 @@ class BoundingBox(NamedTuple):
     
 
 class CarDetector:
-    def __init__(self, min_area: int):
-        self.min_area = min_area # TODO: max area too? max height or widdth? or something else?
+    def __init__(self, area: tuple[int, int], aspect_ratio: tuple[float, float], fill_ratio: tuple[float, float]):
+        self.min_area = area[0] # TODO: max area too? max height or widdth? or something else?
+        self.max_area = area[1]
+        assert self.min_area <= self.max_area
+        
+        self.min_aspect_ratio = aspect_ratio[0]
+        self.max_aspect_ratio = aspect_ratio[1]
+        assert self.min_aspect_ratio <= self.max_aspect_ratio
+        
+        self.min_fill_ratio = fill_ratio[0]
+        self.max_fill_ratio = fill_ratio[1]
+        assert 0.0 <= self.min_fill_ratio <= self.max_fill_ratio <= 1.0
+
     
     def detect(self, mask: np.ndarray) -> list[BoundingBox]:
         u8mask = mask.astype(np.uint8)
@@ -24,12 +35,22 @@ class CarDetector:
         
         boxes = []
         for index_blob in range(1, nb_blobs):
-            size = stats[index_blob, cv2.CC_STAT_AREA]
-            if size >= self.min_area:
+            area = stats[index_blob, cv2.CC_STAT_AREA]
+            height = stats[index_blob, cv2.CC_STAT_HEIGHT]
+            width = stats[index_blob, cv2.CC_STAT_WIDTH]
+            
+            fill = area / (height * width)
+            aspect_ratio = width / height
+            
+            area_ok = self.min_area <= area <= self.max_area
+            fill_ok = self.min_fill_ratio <= fill <= self.max_fill_ratio
+            aspect_ratio_ok = self.min_aspect_ratio <= aspect_ratio <= self.max_aspect_ratio
+            
+            if area_ok and fill_ok and aspect_ratio_ok:
                 top = stats[index_blob, cv2.CC_STAT_TOP]
-                bottom = stats[index_blob, cv2.CC_STAT_HEIGHT] + top
+                bottom = height + top
                 left = stats[index_blob, cv2.CC_STAT_LEFT]
-                right = stats[index_blob, cv2.CC_STAT_WIDTH] + left
+                right = width + left
                 boxes.append(BoundingBox(
                     top=top,
                     bottom=bottom,
