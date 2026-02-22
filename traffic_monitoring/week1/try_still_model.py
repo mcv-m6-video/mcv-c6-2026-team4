@@ -12,7 +12,7 @@ from src.object_detection import BoundingBox, CarDetector
 from src.models.still_models import GrayGaussianModel
 from src.models.adaptive_models import AdaptiveGrayGaussianModel
 from src.video_source import VideoPartSource
-from src.mask_postprocessing import Closing, MaskPostprocess, MedianFilter, Opening, RemoveSmallBlobs
+from src.mask_postprocessing import Closing, Dilate, MaskPostprocess, MedianFilter, Opening, RegionOfInterestMasking, RemoveSmallBlobs
 from src.evaluation import evaluate_detections, show_metrics
 import cv2
 
@@ -64,6 +64,7 @@ def load_annotations(path: str):
 if __name__ == '__main__':
     ANNOTATIONS_PATH = "/home/arnau-marcos-almansa/Downloads/ai_challenge_s03_c010-full_annotation.xml"
     VIDEO_PATH = "/home/arnau-marcos-almansa/Downloads/AICity_data/AICity_data/train/S03/c010/vdo.avi"
+    ROI_PATH = "/home/arnau-marcos-almansa/Downloads/AICity_data/AICity_data/train/S03/c010/roi.jpg"
     OUTPUT_PATH = "predicted_masks.avi"
     
     train_source = VideoPartSource(VIDEO_PATH, 0.0, 0.25)
@@ -79,8 +80,10 @@ if __name__ == '__main__':
     # TODO: for the moment these are arbitrary hyperparameters
     postprocess = MaskPostprocess(
         # MedianFilter(3),
+        # RegionOfInterestMasking.from_file(ROI_PATH),
         Opening((5, 5)),
         Closing((5, 5)),
+        Dilate((7, 7)),
         RemoveSmallBlobs(300),
     )
     

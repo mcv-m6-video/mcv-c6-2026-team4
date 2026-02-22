@@ -1,5 +1,8 @@
+from typing import Self
+
 import cv2
 import numpy as np
+from PIL import Image
 
 class MaskPostprocess:
     def __init__(self, *steps):
@@ -39,6 +42,29 @@ class Closing:
         u8mask = mask.astype(np.uint8)
         u8mask = cv2.morphologyEx(u8mask, cv2.MORPH_CLOSE, self.kernel)
         return u8mask.astype(bool)
+
+class Dilate:
+    def __init__(self, kernel_size: tuple[int, int]):
+        self.kernel = np.ones(kernel_size)
+        
+    def __call__(self, mask: np.ndarray):
+        u8mask = mask.astype(np.uint8)
+        u8mask = cv2.dilate(u8mask, self.kernel)
+        return u8mask.astype(bool)
+
+    
+class RegionOfInterestMasking:
+    def __init__(self, roi_mask: np.ndarray):
+        self.roi_mask = roi_mask
+    
+    def __call__(self, mask: np.ndarray):
+        return mask * self.roi_mask
+    
+    @staticmethod
+    def from_file(path: str) -> Self:
+        roi_mask = np.array(Image.open(path))
+        roi_mask = roi_mask > 100 # arbitrary threshold to get a binary mask
+        return RegionOfInterestMasking(roi_mask.astype(np.uint8))
 
 
 class RemoveSmallBlobs:

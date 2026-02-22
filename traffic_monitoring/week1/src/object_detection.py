@@ -1,5 +1,5 @@
 
-from typing import NamedTuple
+from typing import NamedTuple, Optional
 
 import cv2
 import numpy as np
@@ -10,6 +10,7 @@ class BoundingBox(NamedTuple):
     bottom: float
     left: float
     right: float
+    confidence: Optional[float]
     
 
 class CarDetector:
@@ -55,7 +56,8 @@ class CarDetector:
                     top=top,
                     bottom=bottom,
                     left=left,
-                    right=right
+                    right=right,
+                    confidence=fill
                 ))
         
         return boxes
