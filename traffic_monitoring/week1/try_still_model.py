@@ -50,6 +50,7 @@ def load_annotations(path: str):
                 bottom=ybr,
                 left=xtl,
                 right=xbr,
+                confidence=1.0
             )
             
             if frame not in boxes_per_frame:
@@ -68,7 +69,7 @@ if __name__ == '__main__':
     train_source = VideoPartSource(VIDEO_PATH, 0.0, 0.25)
     test_source = VideoPartSource(VIDEO_PATH, 0.25, 1.0)
     
-    model = AdaptiveGrayGaussianModel(3.0, 0.05)
+    model = AdaptiveGrayGaussianModel(3.0, mean_rho=0.05, variance_rho=0.05)
     
     annotations = load_annotations(ANNOTATIONS_PATH)
     
@@ -83,7 +84,11 @@ if __name__ == '__main__':
         RemoveSmallBlobs(300),
     )
     
-    detector = CarDetector(1000)
+    detector = CarDetector(
+        area=[1000, 100000],
+        aspect_ratio=[0.1, 10.0],
+        fill_ratio=[0.2, 1.0]
+    )
     
     mask_writer = cv2.VideoWriter(
         OUTPUT_PATH,
