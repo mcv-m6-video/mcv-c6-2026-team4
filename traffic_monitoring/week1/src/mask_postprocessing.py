@@ -21,6 +21,26 @@ class MedianFilter:
         return u8mask.astype(bool)
 
 
+class Opening:
+    def __init__(self, kernel_size: tuple[int, int]):
+        self.kernel = np.ones(kernel_size)
+    
+    def __call__(self, mask: np.ndarray):
+        u8mask = mask.astype(np.uint8)
+        u8mask = cv2.morphologyEx(u8mask, cv2.MORPH_OPEN, self.kernel)
+        return u8mask.astype(bool)
+
+
+class Closing:
+    def __init__(self, kernel_size: tuple[int, int]):
+        self.kernel = np.ones(kernel_size)
+    
+    def __call__(self, mask: np.ndarray):
+        u8mask = mask.astype(np.uint8)
+        u8mask = cv2.morphologyEx(u8mask, cv2.MORPH_CLOSE, self.kernel)
+        return u8mask.astype(bool)
+
+
 class RemoveSmallBlobs:
     def __init__(self, min_size: int):
         self.min_size = min_size

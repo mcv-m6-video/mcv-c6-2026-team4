@@ -43,11 +43,8 @@ class VideoPartSource(VideoSource):
                 ret, frame_bgr = cap.read()
                 if not ret:
                     break
-
-                # BGR to RGB
-                frame_rgb = cv2.cvtColor(frame_bgr, cv2.COLOR_BGR2RGB)
-                # HWC to CHW
-                yield np.ascontiguousarray(frame_rgb.transpose(2, 0, 1))
+                
+                yield frame_bgr
         finally:
             cap.release()
 
