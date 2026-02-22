@@ -14,7 +14,7 @@ class BoundingBox(NamedTuple):
 
 class CarDetector:
     def __init__(self, min_area: int):
-        self.min_area = min_area
+        self.min_area = min_area # TODO: max area too? max height or widdth? or something else?
     
     def detect(self, mask: np.ndarray) -> list[BoundingBox]:
         u8mask = mask.astype(np.uint8)
