@@ -3,7 +3,7 @@ from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
 
 from src.object_detection import BoundingBox
-
+import xml.etree.ElementTree as ET
 
 def evaluate_detections(
     gt_per_frame: dict[int, list[BoundingBox]],
@@ -86,3 +86,40 @@ def evaluate_detections(
 def show_metrics(metrics):
     for name, value in metrics.items():
         print(f"{name} = {value}")
+
+
+def load_annotations(path: str):
+    tree = ET.parse(path)
+    boxes = tree.findall("track/box")
+    boxes_per_frame = dict()
+    for box in boxes:
+        frame    = int(box.get("frame"))
+        xtl      = float(box.get("xtl"))
+        ytl      = float(box.get("ytl"))
+        xbr      = float(box.get("xbr"))
+        ybr      = float(box.get("ybr"))
+        outside  = box.get("outside") == "1"
+        occluded = box.get("occluded") == "1"
+        keyframe = box.get("keyframe") == "1"
+
+        parked = None
+        for attr in box.findall("attribute"):
+            if attr.get("name") == "parked":
+                parked = attr.text == "true"
+                
+        # TODO: should we even discard parked cars?
+        if not parked:
+            bbox = BoundingBox(
+                top=ytl,
+                bottom=ybr,
+                left=xtl,
+                right=xbr,
+                confidence=1.0
+            )
+            
+            if frame not in boxes_per_frame:
+                boxes_per_frame[frame] = [bbox]
+            else:
+                boxes_per_frame[frame].append(bbox)
+    
+    return boxes_per_frame

@@ -51,9 +51,9 @@ def objective(trial: optuna.Trial, annotations: Dict[int, list[BoundingBox]],
     std_bias = trial.suggest_float("std_bias", 0.0, 5.0)
 
     # Postprocessing hyperparameters
-    opening_size = trial.suggest_categorical("opening_size", [3, 5, 7, 9, 11, 13, 15])
-    closing_size = trial.suggest_categorical("closing_size", [3, 5, 7, 9, 11, 13, 15])
-    dilate_size = trial.suggest_categorical("dilate_size", [3, 5, 7, 9, 11, 13, 15])
+    opening_size = trial.suggest_categorical("opening_size", [3, 5, 7])
+    closing_size = trial.suggest_categorical("closing_size", [3, 5, 7, 9, 11, 13, 15, 17, 20])
+    dilate_size = trial.suggest_categorical("dilate_size", [5, 7, 9])
     remove_small_blobs = trial.suggest_int("remove_small_blobs", 100, 1000)
 
     # Detector hyperparameters
