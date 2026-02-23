@@ -1,4 +1,5 @@
 
+from collections import deque
 from typing import NamedTuple, Optional
 
 import cv2
@@ -61,4 +62,19 @@ class CarDetector:
                 ))
         
         return boxes
-        
+
+
+class TemporalCarDetector:
+    def __init__(self, base_detector: CarDetector, n_frames: int = 5, threshold: float = 0.5):
+        self.base_detector = base_detector
+        self.n_frames = n_frames
+        self.threshold = threshold
+        self.mask_buffer: deque[np.ndarray] = deque(maxlen=n_frames)
+
+    def detect(self, mask: np.ndarray) -> list[BoundingBox]:
+        self.mask_buffer.append(mask.astype(np.float32))
+        weights = np.arange(1, len(self.mask_buffer) + 1, dtype=np.float32)
+        weights /= weights.sum()
+        accumulated = sum(w * m for w, m in zip(weights, self.mask_buffer))
+        smoothed_mask = accumulated >= self.threshold
+        return self.base_detector.detect(smoothed_mask)

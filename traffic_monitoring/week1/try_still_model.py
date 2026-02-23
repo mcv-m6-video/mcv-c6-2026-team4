@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from src.object_detection import BoundingBox, CarDetector
+from src.object_detection import BoundingBox, CarDetector, TemporalCarDetector
 from src.models.still_models import GrayGaussianModel
 from src.models.adaptive_models import AdaptiveGrayGaussianModel
 from src.video_source import VideoPartSource
@@ -62,9 +62,9 @@ def load_annotations(path: str):
 
 
 if __name__ == '__main__':
-    ANNOTATIONS_PATH = "/home/arnau-marcos-almansa/Downloads/ai_challenge_s03_c010-full_annotation.xml"
-    VIDEO_PATH = "/home/arnau-marcos-almansa/Downloads/AICity_data/AICity_data/train/S03/c010/vdo.avi"
-    ROI_PATH = "/home/arnau-marcos-almansa/Downloads/AICity_data/AICity_data/train/S03/c010/roi.jpg"
+    ANNOTATIONS_PATH = "../ai_challenge_s03_c010-full_annotation.xml"
+    VIDEO_PATH = "../AICity_data/AICity_data/train/S03/c010/vdo.avi"
+    ROI_PATH = "../AICity_data/AICity_data/train/S03/c010/roi.jpg"
     OUTPUT_PATH = "predicted_masks.avi"
     
     train_source = VideoPartSource(VIDEO_PATH, 0.0, 0.25)
@@ -92,6 +92,16 @@ if __name__ == '__main__':
         aspect_ratio=[0.1, 10.0],
         fill_ratio=[0.2, 1.0]
     )
+    
+    # detector = TemporalCarDetector(
+    #     base_detector=CarDetector(
+    #         area=[1000, 100000],
+    #         aspect_ratio=[0.1, 10.0],
+    #         fill_ratio=[0.2, 1.0]
+    #     ),
+    #     n_frames=3,
+    #     threshold=0.5
+    # )
     
     mask_writer = cv2.VideoWriter(
         OUTPUT_PATH,
