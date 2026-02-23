@@ -10,8 +10,11 @@ from tqdm import tqdm
 from src.evaluation import evaluate_detections
 from src.mask_postprocessing import Closing, Dilate, MaskPostprocess, Opening, RemoveSmallBlobs
 from src.models.adaptive_models import AdaptiveGrayGaussianModel
-from src.object_detection import BoundingBox, CarDetector, TemporalCarDetector, merge_bboxes
+from src.object_detection import BoundingBox, CarDetector, TemporalCarDetector
 from src.video_source import VideoPartSource
+from src.pipeline import DetectionPipeline
+from src.shadow_removal import HSVBackgroundComparison
+from src.bbox_merging import PolBoundingBoxMerger
 
 
 def load_annotations(path: str) -> Dict[int, list[BoundingBox]]:
@@ -44,42 +47,56 @@ def objective(trial: optuna.Trial, annotations: Dict[int, list[BoundingBox]],
               train_source: VideoPartSource, test_source: VideoPartSource,
               use_temporal: bool) -> float:
 
-    # Model hyperparameters
+    # Model hyperparameters (primary search parameters)
     alpha = trial.suggest_float("alpha", 1.0, 5.0)
     mean_rho = trial.suggest_float("mean_rho", 0.001, 0.4)
     variance_rho = trial.suggest_float("variance_rho", 0.001, 0.4)
     std_bias = trial.suggest_float("std_bias", 0.0, 5.0)
 
-    # Postprocessing hyperparameters
-    opening_size = trial.suggest_categorical("opening_size", [3, 5, 7])
-    closing_size = trial.suggest_categorical("closing_size", [3, 5, 7, 9, 11, 13, 15, 17, 20])
-    dilate_size = trial.suggest_categorical("dilate_size", [5, 7, 9])
-    remove_small_blobs = trial.suggest_int("remove_small_blobs", 100, 1000)
+    # Shadow removal hyperparameters (primary search parameters)
+    hue_threshold = trial.suggest_float("hue_threshold", 5.0, 30.0)
+    value_ratio_min = trial.suggest_float("value_ratio_min", 0.3, 0.7)
+    value_ratio_max = trial.suggest_float("value_ratio_max", 0.8, 1.0)
+    saturation_diff_threshold = trial.suggest_float("saturation_diff_threshold", 10.0, 50.0)
 
-    # Detector hyperparameters
-    area_min = trial.suggest_int("area_min", 500, 2000)
-    area_max = trial.suggest_int("area_max", 50000, 150000)
-    aspect_ratio_min = trial.suggest_float("aspect_ratio_min", 0.1, 0.5)
-    aspect_ratio_max = trial.suggest_float("aspect_ratio_max", 5.0, 15.0)
-    fill_ratio_min = trial.suggest_float("fill_ratio_min", 0.1, 0.3)
-    fill_ratio_max = 1.0  # Always 1.0 as requested
+    # Fixed postprocessing hyperparameters (from try_pipeline.py)
+    opening_size = 5
+    closing_size = 15
+    dilate_size = 9
+    remove_small_blobs = 632
 
-    # Temporal hyperparameters (if enabled)
-    if use_temporal:
-        n_frames = trial.suggest_int("n_frames", 1, 5)
-        temporal_threshold = trial.suggest_float("temporal_threshold", 0.3, 0.7)
+    # Fixed detector hyperparameters (from try_pipeline.py)
+    area_min = 1550
+    area_max = 10000000000
+    aspect_ratio_min = 0.22118807684047892
+    aspect_ratio_max = 4.474026431574192
+    fill_ratio_min = 0.20821692159573382
+    fill_ratio_max = 1.0
 
-    # BBOX postprocessing hyperparams
-    merge_distance = trial.suggest_int("merge_distance", 10, 50)
+    # Fixed temporal hyperparameters (from try_pipeline.py)
+    n_frames = 3
+    temporal_threshold = 0.5
 
+    # Fixed BBOX postprocessing hyperparams (from try_pipeline.py)
+    merge_distance = 28
+
+    # Create model
     model = AdaptiveGrayGaussianModel(
         alpha=alpha,
         mean_rho=mean_rho,
         variance_rho=variance_rho,
         std_bias=std_bias
     )
-    model.fit_from_source(train_source)
 
+    # Create shadow remover
+    shadow_remover = HSVBackgroundComparison(
+        hue_threshold=hue_threshold,
+        value_ratio_min=value_ratio_min,
+        value_ratio_max=value_ratio_max,
+        saturation_diff_threshold=saturation_diff_threshold
+    )
+
+    # Create postprocessor
     postprocess = MaskPostprocess(
         Opening((opening_size, opening_size)),
         Closing((closing_size, closing_size)),
@@ -87,6 +104,7 @@ def objective(trial: optuna.Trial, annotations: Dict[int, list[BoundingBox]],
         RemoveSmallBlobs(remove_small_blobs),
     )
 
+    # Create detector
     base_detector = CarDetector(
         area=[area_min, area_max],
         aspect_ratio=[aspect_ratio_min, aspect_ratio_max],
@@ -98,17 +116,28 @@ def objective(trial: optuna.Trial, annotations: Dict[int, list[BoundingBox]],
     else:
         detector = base_detector
 
+    # Create bbox merger
+    bbox_merger = PolBoundingBoxMerger(merge_distance=merge_distance)
+
+    # Create pipeline
+    pipeline = DetectionPipeline(
+        background_model=model,
+        shadow_remover=shadow_remover,
+        mask_posprocess=postprocess,
+        detector=detector,
+        bbox_merger=bbox_merger
+    )
+
+    # Fit and predict
+    pipeline.fit_from_source(train_source)
+
     predictions = {}
-    for mask, frame_id in zip(
-        model.predict_from_source(test_source),
+    for detections, frame_id in zip(
+        pipeline.predict_from_source(test_source),
         range(test_source.start_frame, test_source.start_frame + test_source.n_frames)
     ):
-        if mask.ndim == 3:
-            mask = mask.squeeze(0)
-        processed_mask = postprocess(mask)
-        bboxes = detector.detect(processed_mask)
-        bboxes = merge_bboxes(bboxes, merge_distance=merge_distance)
-        predictions[frame_id] = bboxes
+        predictions[frame_id] = detections
+
     gt_for_eval = {fid: boxes for fid, boxes in annotations.items() if fid in predictions}
 
     metrics = evaluate_detections(gt_for_eval, predictions)
