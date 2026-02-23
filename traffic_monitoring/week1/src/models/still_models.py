@@ -19,40 +19,46 @@ def bgr_to_gray(bgr):
 # TODO: maybe downsizing the image (lowpass + downsize) does the same??????
 
 
-
 def compute_gray_mean(source: VideoSource) -> np.ndarray:
-        frame_sum = 0
-        frame_count = 0
-        for frame in iter(source):
-            gray_frame = bgr_to_gray(frame).astype(np.float32)
-            frame_sum = frame_sum + gray_frame
-            frame_count += 1
-        
-        return frame_sum / frame_count
+    it = iter(source)
+    first = bgr_to_gray(next(it)).astype(np.float32)
+    frame_sum = first.copy()
+    frame_count = 1
+    for frame in it:
+        gray_frame = bgr_to_gray(frame).astype(np.float32)
+        frame_sum += gray_frame
+        frame_count += 1
+    return frame_sum / frame_count
 
 
 def compute_bgr_mean(source: VideoSource) -> np.ndarray:
-        frame_sum = 0
-        frame_count = 0
-        for frame in iter(source):
-            frame_sum = frame_sum + frame.astype(np.float32)
-            frame_count += 1
-        
-        return frame_sum / frame_count
+    it = iter(source)
+    frame_sum = next(it).astype(np.float32).copy()
+    frame_count = 1
+    for frame in it:
+        frame_sum += frame.astype(np.float32)
+        frame_count += 1
+    return frame_sum / frame_count
 
 
 def compute_gray_variance_and_std(mean: np.ndarray, source: VideoSource) -> Tuple[np.ndarray, np.ndarray]:
-        frame_variance_sum = 0
-        frame_count = 0
-        for frame in iter(source):
-            gray_frame = bgr_to_gray(frame).astype(np.float32)
-            frame_variance_sum = frame_variance_sum + np.square(gray_frame - mean)
-            frame_count += 1
-        
-        variance = frame_variance_sum / (frame_count - 1)
-        std = np.sqrt(variance)
-        
-        return variance, std
+    it = iter(source)
+    first = bgr_to_gray(next(it)).astype(np.float32)
+    np.subtract(first, mean, out=first)
+    np.square(first, out=first)
+    variance_sum = first
+    frame_count = 1
+    
+    for frame in it:
+        gray_frame = bgr_to_gray(frame).astype(np.float32)
+        gray_frame -= mean
+        np.square(gray_frame, out=gray_frame)
+        variance_sum += gray_frame
+        frame_count += 1
+    
+    variance = variance_sum / (frame_count - 1)
+    std = np.sqrt(variance)
+    return variance, std
 
 
 def compute_gray_median(source: VideoSource) -> np.ndarray:

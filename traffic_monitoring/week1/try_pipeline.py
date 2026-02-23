@@ -2,6 +2,7 @@
 import cv2
 import numpy as np
 from tqdm import tqdm
+from src.models.still_models import GrayGaussianModel
 from src.bbox_merging import PolBoundingBoxMerger
 from src.shadow_removal import HSVBackgroundComparison, NoShadowRemoval
 from src.object_detection import TemporalCarDetector, CarDetector
@@ -11,6 +12,9 @@ from src.models.adaptive_models import AdaptiveGrayGaussianModel
 from src.video_source import VideoPartSource
 from src.pipeline import DetectionPipeline
 from try_still_model import draw_bboxes
+import cProfile
+import pstats
+from io import StringIO
 
 
 if __name__ == '__main__':
@@ -24,6 +28,7 @@ if __name__ == '__main__':
     annotations = load_annotations(ANNOTATIONS_PATH)
     
     model = AdaptiveGrayGaussianModel(3.0, mean_rho=0.05, variance_rho=0.05)
+    # model = GrayGaussianModel(3.0)
     
     # TODO: for the moment these are arbitrary hyperparameters
     postprocess = MaskPostprocess(
@@ -50,7 +55,7 @@ if __name__ == '__main__':
         detector=detector,
         bbox_merger=PolBoundingBoxMerger(merge_distance=40)
     )
-    
+
     print("Fitting")
     pipeline.fit_from_source(train_source)
     
