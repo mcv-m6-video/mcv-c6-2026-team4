@@ -1,0 +1,636 @@
+[I 2026-02-23 12:12:28,036] Using an existing study with name 'still_no_temporal' instead of creating a new one.
+Loading annotations and video...
+Starting optimization for study 'still_no_temporal'
+Using temporal detector: False
+Database: optuna_still_no_temporal.db
+Number of trials: 25
+
+To run in parallel, execute this same command in multiple terminals.
+--------------------------------------------------------------------------------
+  0%|          | 0/25 [00:00<?, ?it/s]                                        0%|          | 0/25 [03:50<?, ?it/s]Best trial: 4. Best value: 0.27257:   0%|          | 0/25 [03:50<?, ?it/s]Best trial: 4. Best value: 0.27257:   4%|▍         | 1/25 [03:50<1:32:02, 230.10s/it]                                                                                     Best trial: 4. Best value: 0.27257:   4%|▍         | 1/25 [10:55<1:32:02, 230.10s/it]Best trial: 4. Best value: 0.27257:   4%|▍         | 1/25 [10:55<1:32:02, 230.10s/it]Best trial: 4. Best value: 0.27257:   8%|▊         | 2/25 [10:55<2:12:11, 344.83s/it]                                                                                     Best trial: 4. Best value: 0.27257:   8%|▊         | 2/25 [14:12<2:12:11, 344.83s/it]Best trial: 4. Best value: 0.27257:   8%|▊         | 2/25 [14:12<2:12:11, 344.83s/it]Best trial: 4. Best value: 0.27257:  12%|█▏        | 3/25 [14:12<1:41:47, 277.60s/it]                                                                                     Best trial: 4. Best value: 0.27257:  12%|█▏        | 3/25 [17:20<1:41:47, 277.60s/it]Best trial: 25. Best value: 0.291943:  12%|█▏        | 3/25 [17:20<1:41:47, 277.60s/it]Best trial: 25. Best value: 0.291943:  16%|█▌        | 4/25 [17:20<1:24:42, 242.02s/it]                                                                                       creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.24s).
+Accumulating evaluation results...
+DONE (t=0.34s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.078
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.222
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.041
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.005
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.188
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.075
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.145
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.145
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.037
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.270
+[I 2026-02-23 12:16:18,133] Trial 3 finished with value: 0.2219843797305153 and parameters: {'alpha': 3.159632344423839, 'std_bias': 1.378615687917455, 'opening_size': 7, 'closing_size': 20, 'dilate_size': 7, 'remove_small_blobs': 698, 'area_min': 1339, 'area_max': 149369, 'aspect_ratio_min': 0.16437387263152717, 'aspect_ratio_max': 5.508511195178061, 'fill_ratio_min': 0.27946678690714444, 'merge_distance': 21}. Best is trial 4 with value: 0.2725697418499596.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.03s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.86s).
+Accumulating evaluation results...
+DONE (t=0.58s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.090
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.203
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.065
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.006
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.240
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.077
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.182
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.182
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.055
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.330
+[I 2026-02-23 12:23:23,283] Trial 11 finished with value: 0.20327508696095953 and parameters: {'alpha': 5.676263212824754, 'std_bias': 0.8235233533548719, 'opening_size': 3, 'closing_size': 13, 'dilate_size': 9, 'remove_small_blobs': 109, 'area_min': 950, 'area_max': 108337, 'aspect_ratio_min': 0.16552333803975455, 'aspect_ratio_max': 4.361381264360105, 'fill_ratio_min': 0.19615269557648352, 'merge_distance': 32}. Best is trial 4 with value: 0.2725697418499596.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.01s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.21s).
+Accumulating evaluation results...
+DONE (t=0.32s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.075
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.145
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.068
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.001
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.224
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.105
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.010
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.351
+[I 2026-02-23 12:26:40,888] Trial 24 finished with value: 0.14528261111822285 and parameters: {'alpha': 5.445030196078916, 'std_bias': 4.929025215392098, 'opening_size': 5, 'closing_size': 9, 'dilate_size': 7, 'remove_small_blobs': 987, 'area_min': 508, 'area_max': 51685, 'aspect_ratio_min': 0.10262104467347921, 'aspect_ratio_max': 10.929628878927499, 'fill_ratio_min': 0.16697437046943875, 'merge_distance': 25}. Best is trial 4 with value: 0.2725697418499596.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.01s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.68s).
+Accumulating evaluation results...
+DONE (t=0.48s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.152
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.258
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.149
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.004
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.358
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.139
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.209
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.209
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.012
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.437
+[I 2026-02-23 12:29:48,344] Trial 32 finished with value: 0.2576244330148923 and parameters: {'alpha': 6.5988206276282515, 'std_bias': 2.873062049518397, 'opening_size': 3, 'closing_size': 5, 'dilate_size': 7, 'remove_small_blobs': 810, 'area_min': 1603, 'area_max': 147930, 'aspect_ratio_min': 0.18683424349887373, 'aspect_ratio_max': 14.68206144108272, 'fill_ratio_min': 0.22907697493305668, 'merge_distance': 42}. Best is trial 25 with value: 0.2919433882459592.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.00s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.60s).
+Accumulating evaluation results...
+DONE (t=0.42s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.167
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.266
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.173
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.004
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.402
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.155
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.231
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.231
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.011
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.487
+[I 2026-02-23 12:33:10,552] Trial 40 finished with value: 0.26571303121752143 and parameters: {'alpha': 6.187177673154111, 'std_bias': 3.9289503478579175, 'opening_size': 3, 'closing_size': 5, 'dilate_size': 9, 'remove_small_blobs': 469, 'area_min': 1751, 'area_max': 138434, 'aspect_ratio_min': 0.1236077618722558, 'aspect_ratio_max': 11.750966749607967, 'fill_ratio_min': 0.12177324852537826, 'merge_distance': 21}. Best is trial 25 with value: 0.2919433882459592.Best trial: 25. Best value: 0.291943:  16%|█▌        | 4/25 [20:42<1:24:42, 242.02s/it]Best trial: 25. Best value: 0.291943:  16%|█▌        | 4/25 [20:42<1:24:42, 242.02s/it]Best trial: 25. Best value: 0.291943:  20%|██        | 5/25 [20:42<1:15:53, 227.66s/it]                                                                                       Best trial: 25. Best value: 0.291943:  20%|██        | 5/25 [24:51<1:15:53, 227.66s/it]Best trial: 45. Best value: 0.29937:  20%|██        | 5/25 [24:51<1:15:53, 227.66s/it] Best trial: 45. Best value: 0.29937:  24%|██▍       | 6/25 [24:51<1:14:25, 235.02s/it]                                                                                      Best trial: 45. Best value: 0.29937:  24%|██▍       | 6/25 [28:58<1:14:25, 235.02s/it]Best trial: 53. Best value: 0.30211:  24%|██▍       | 6/25 [28:58<1:14:25, 235.02s/it]Best trial: 53. Best value: 0.30211:  28%|██▊       | 7/25 [28:58<1:11:38, 238.81s/it]                                                                                      Best trial: 53. Best value: 0.30211:  28%|██▊       | 7/25 [32:55<1:11:38, 238.81s/it]Best trial: 58. Best value: 0.305409:  28%|██▊       | 7/25 [32:55<1:11:38, 238.81s/it]Best trial: 58. Best value: 0.305409:  32%|███▏      | 8/25 [32:55<1:07:28, 238.15s/it]                                                                                       Best trial: 58. Best value: 0.305409:  32%|███▏      | 8/25 [37:03<1:07:28, 238.15s/it]Best trial: 59. Best value: 0.308346:  32%|███▏      | 8/25 [37:03<1:07:28, 238.15s/it]Best trial: 59. Best value: 0.308346:  36%|███▌      | 9/25 [37:03<1:04:20, 241.30s/it]                                                                                       
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.03s).
+Accumulating evaluation results...
+DONE (t=0.52s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.137
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.290
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.104
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.022
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.272
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.117
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.198
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.198
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.058
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.361
+[I 2026-02-23 12:37:19,843] Trial 46 finished with value: 0.29026233270072443 and parameters: {'alpha': 3.383041978061623, 'std_bias': 3.38292920311059, 'opening_size': 5, 'closing_size': 13, 'dilate_size': 9, 'remove_small_blobs': 352, 'area_min': 1887, 'area_max': 128673, 'aspect_ratio_min': 0.11281154433703793, 'aspect_ratio_max': 13.899304202791663, 'fill_ratio_min': 0.14624970708160473, 'merge_distance': 35}. Best is trial 45 with value: 0.2993697420232575.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.08s).
+Accumulating evaluation results...
+DONE (t=0.27s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.139
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.302
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.105
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.027
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.271
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.116
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.204
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.204
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.068
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.362
+[I 2026-02-23 12:41:26,477] Trial 54 finished with value: 0.30169024830465097 and parameters: {'alpha': 3.3395667913003937, 'std_bias': 3.379450322133782, 'opening_size': 5, 'closing_size': 13, 'dilate_size': 9, 'remove_small_blobs': 356, 'area_min': 1690, 'area_max': 129057, 'aspect_ratio_min': 0.11094958039994303, 'aspect_ratio_max': 14.181809837251915, 'fill_ratio_min': 0.14016868601067162, 'merge_distance': 38}. Best is trial 53 with value: 0.30210954318543926.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.88s).
+Accumulating evaluation results...
+DONE (t=0.34s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.086
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.189
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.066
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.002
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.204
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.094
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.147
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.147
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.009
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.307
+[I 2026-02-23 12:45:23,207] Trial 62 finished with value: 0.18940345878445494 and parameters: {'alpha': 3.8399903871078838, 'std_bias': 2.3485066319357815, 'opening_size': 7, 'closing_size': 17, 'dilate_size': 5, 'remove_small_blobs': 248, 'area_min': 1728, 'area_max': 117854, 'aspect_ratio_min': 0.13775144112787208, 'aspect_ratio_max': 12.84704184475602, 'fill_ratio_min': 0.16472725881193745, 'merge_distance': 39}. Best is trial 58 with value: 0.3054088232400746.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.02s).
+Accumulating evaluation results...
+DONE (t=0.31s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.117
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.290
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.076
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.046
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.207
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.103
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.211
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.211
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.139
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.293
+[I 2026-02-23 12:49:31,435] Trial 69 finished with value: 0.2899275109703034 and parameters: {'alpha': 2.9721675289696687, 'std_bias': 3.0869033869281535, 'opening_size': 5, 'closing_size': 20, 'dilate_size': 9, 'remove_small_blobs': 310, 'area_min': 1660, 'area_max': 122656, 'aspect_ratio_min': 0.10679206489973297, 'aspect_ratio_max': 12.421321844614031, 'fill_ratio_min': 0.16753219436864336, 'merge_distance': 45}. Best is trial 59 with value: 0.30834572496878.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.01s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.21s).
+Accumulating evaluation results...
+DONE (t=0.36s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.128
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.328
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.077
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.072
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.200
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.120
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.187
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.284
+[I 2026-02-23 12:53:34,205] Trial 77 finished with value: 0.32796597074212136 and parameters: {'alpha': 2.3442972906400827, 'std_bias': 4.247160827310103, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 550, 'area_min': 1989, 'area_max': 112722, 'aspect_ratio_min': 0.2097219427252997, 'aspect_ratio_max': 13.406606925991206, 'fill_ratio_min': 0.1304864035235221, 'merge_distance': 29}. Best is trial 77 with value: 0.32796597074212136.Best trial: 59. Best value: 0.308346:  36%|███▌      | 9/25 [41:06<1:04:20, 241.30s/it]Best trial: 77. Best value: 0.327966:  36%|███▌      | 9/25 [41:06<1:04:20, 241.30s/it]Best trial: 77. Best value: 0.327966:  40%|████      | 10/25 [41:06<1:00:26, 241.76s/it]                                                                                        Best trial: 77. Best value: 0.327966:  40%|████      | 10/25 [45:35<1:00:26, 241.76s/it]Best trial: 76. Best value: 0.33616:  40%|████      | 10/25 [45:35<1:00:26, 241.76s/it] Best trial: 76. Best value: 0.33616:  44%|████▍     | 11/25 [45:35<58:23, 250.28s/it]                                                                                       Best trial: 76. Best value: 0.33616:  44%|████▍     | 11/25 [49:15<58:23, 250.28s/it]Best trial: 76. Best value: 0.33616:  44%|████▍     | 11/25 [49:15<58:23, 250.28s/it]Best trial: 76. Best value: 0.33616:  48%|████▊     | 12/25 [49:15<52:12, 240.93s/it]                                                                                     Best trial: 76. Best value: 0.33616:  48%|████▊     | 12/25 [53:05<52:12, 240.93s/it]Best trial: 76. Best value: 0.33616:  48%|████▊     | 12/25 [53:05<52:12, 240.93s/it]Best trial: 76. Best value: 0.33616:  52%|█████▏    | 13/25 [53:05<47:32, 237.73s/it]                                                                                     Best trial: 76. Best value: 0.33616:  52%|█████▏    | 13/25 [56:54<47:32, 237.73s/it]Best trial: 106. Best value: 0.349307:  52%|█████▏    | 13/25 [56:54<47:32, 237.73s/it]Best trial: 106. Best value: 0.349307:  56%|█████▌    | 14/25 [56:54<43:05, 235.07s/it]                                                                                       
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.14s).
+Accumulating evaluation results...
+DONE (t=0.34s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.106
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.275
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.064
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.065
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.164
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.098
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.239
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.239
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.225
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.256
+[I 2026-02-23 12:58:03,823] Trial 82 finished with value: 0.27489518625224973 and parameters: {'alpha': 2.1720413299339807, 'std_bias': 4.248615095314768, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 407, 'area_min': 1484, 'area_max': 132433, 'aspect_ratio_min': 0.21255737246944972, 'aspect_ratio_max': 11.43443268102234, 'fill_ratio_min': 0.11320068342383734, 'merge_distance': 40}. Best is trial 76 with value: 0.3361603336157239.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.15s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.90s).
+Accumulating evaluation results...
+DONE (t=0.34s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.145
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.298
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.124
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.015
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.306
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.127
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.207
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.207
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.045
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.395
+[I 2026-02-23 13:01:43,379] Trial 91 finished with value: 0.29804806506299014 and parameters: {'alpha': 3.56790163097398, 'std_bias': 4.478242679585706, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 519, 'area_min': 1849, 'area_max': 96908, 'aspect_ratio_min': 0.20508081798392802, 'aspect_ratio_max': 10.258806861144777, 'fill_ratio_min': 0.13038914485054945, 'merge_distance': 31}. Best is trial 76 with value: 0.3361603336157239.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.03s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.43s).
+Accumulating evaluation results...
+DONE (t=0.42s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.118
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.272
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.080
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.043
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.226
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.107
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.163
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.313
+[I 2026-02-23 13:05:33,751] Trial 99 finished with value: 0.2723771340231176 and parameters: {'alpha': 2.5843466612711126, 'std_bias': 4.71358552012947, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 693, 'area_min': 1231, 'area_max': 93497, 'aspect_ratio_min': 0.21965667476391876, 'aspect_ratio_max': 14.43597849332008, 'fill_ratio_min': 0.14214433064108536, 'merge_distance': 43}. Best is trial 76 with value: 0.3361603336157239.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.22s).
+Accumulating evaluation results...
+DONE (t=0.46s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.150
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.349
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.104
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.048
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.270
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.123
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.232
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.125
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.355
+[I 2026-02-23 13:09:22,649] Trial 106 finished with value: 0.34930707775950676 and parameters: {'alpha': 2.840026271930218, 'std_bias': 4.769977313430562, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 632, 'area_min': 1550, 'area_max': 109499, 'aspect_ratio_min': 0.22118807684047892, 'aspect_ratio_max': 4.474026431574192, 'fill_ratio_min': 0.20821692159573382, 'merge_distance': 28}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.16s).
+Accumulating evaluation results...
+DONE (t=0.50s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.138
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.330
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.093
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.040
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.265
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.119
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.231
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.231
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.128
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.351
+[I 2026-02-23 13:13:13,908] Trial 113 finished with value: 0.3296159212419909 and parameters: {'alpha': 2.8296224787977815, 'std_bias': 4.798026430867958, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 618, 'area_min': 1380, 'area_max': 109560, 'aspect_ratio_min': 0.23034197574339674, 'aspect_ratio_max': 4.025787485108696, 'fill_ratio_min': 0.20743868300670615, 'merge_distance': 28}. Best is trial 106 with value: 0.34930707775950676.Best trial: 106. Best value: 0.349307:  56%|█████▌    | 14/25 [1:00:45<43:05, 235.07s/it]Best trial: 106. Best value: 0.349307:  56%|█████▌    | 14/25 [1:00:45<43:05, 235.07s/it]Best trial: 106. Best value: 0.349307:  60%|██████    | 15/25 [1:00:45<38:59, 233.92s/it]                                                                                         Best trial: 106. Best value: 0.349307:  60%|██████    | 15/25 [1:04:30<38:59, 233.92s/it]Best trial: 106. Best value: 0.349307:  60%|██████    | 15/25 [1:04:30<38:59, 233.92s/it]Best trial: 106. Best value: 0.349307:  64%|██████▍   | 16/25 [1:04:30<34:40, 231.14s/it]                                                                                         Best trial: 106. Best value: 0.349307:  64%|██████▍   | 16/25 [1:08:32<34:40, 231.14s/it]Best trial: 106. Best value: 0.349307:  64%|██████▍   | 16/25 [1:08:32<34:40, 231.14s/it]Best trial: 106. Best value: 0.349307:  68%|██████▊   | 17/25 [1:08:32<31:16, 234.53s/it]                                                                                         Best trial: 106. Best value: 0.349307:  68%|██████▊   | 17/25 [1:13:25<31:16, 234.53s/it]Best trial: 106. Best value: 0.349307:  68%|██████▊   | 17/25 [1:13:25<31:16, 234.53s/it]Best trial: 106. Best value: 0.349307:  72%|███████▏  | 18/25 [1:13:25<29:23, 251.99s/it]                                                                                         Best trial: 106. Best value: 0.349307:  72%|███████▏  | 18/25 [1:17:16<29:23, 251.99s/it]Best trial: 106. Best value: 0.349307:  72%|███████▏  | 18/25 [1:17:16<29:23, 251.99s/it]Best trial: 106. Best value: 0.349307:  76%|███████▌  | 19/25 [1:17:16<24:34, 245.68s/it]                                                                                         
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.48s).
+Accumulating evaluation results...
+DONE (t=0.37s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.151
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.344
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.107
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.041
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.284
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.124
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.234
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.234
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.118
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.369
+[I 2026-02-23 13:16:58,604] Trial 122 finished with value: 0.3440909054285723 and parameters: {'alpha': 2.892901135870146, 'std_bias': 4.878706157510967, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 739, 'area_min': 1473, 'area_max': 107430, 'aspect_ratio_min': 0.23213903085134335, 'aspect_ratio_max': 5.331544003323025, 'fill_ratio_min': 0.19811852801298238, 'merge_distance': 23}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.55s).
+Accumulating evaluation results...
+DONE (t=0.36s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.134
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.329
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.083
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.046
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.241
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.125
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.227
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.227
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.141
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.328
+[I 2026-02-23 13:21:01,022] Trial 129 finished with value: 0.32861551431382907 and parameters: {'alpha': 2.4504151770669407, 'std_bias': 4.97312551990826, 'opening_size': 5, 'closing_size': 7, 'dilate_size': 9, 'remove_small_blobs': 571, 'area_min': 1463, 'area_max': 114290, 'aspect_ratio_min': 0.22573086670660375, 'aspect_ratio_max': 4.028313681465066, 'fill_ratio_min': 0.23808101838544765, 'merge_distance': 24}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.16s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=3.33s).
+Accumulating evaluation results...
+DONE (t=0.46s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.034
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.098
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.020
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.033
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.033
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.069
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.170
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.170
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.218
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.114
+[I 2026-02-23 13:25:53,644] Trial 137 finished with value: 0.0982184095743968 and parameters: {'alpha': 1.7917261759509413, 'std_bias': 1.7666285415406158, 'opening_size': 5, 'closing_size': 7, 'dilate_size': 9, 'remove_small_blobs': 676, 'area_min': 1519, 'area_max': 115036, 'aspect_ratio_min': 0.21573370333840391, 'aspect_ratio_max': 4.720934514409223, 'fill_ratio_min': 0.25806549646073085, 'merge_distance': 22}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.35s).
+Accumulating evaluation results...
+DONE (t=0.35s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.119
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.272
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.088
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.018
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.251
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.115
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.193
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.193
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.068
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.339
+[I 2026-02-23 13:29:44,619] Trial 146 finished with value: 0.2720016850576211 and parameters: {'alpha': 3.1205432294295123, 'std_bias': 4.613429792243503, 'opening_size': 5, 'closing_size': 7, 'dilate_size': 9, 'remove_small_blobs': 601, 'area_min': 1589, 'area_max': 70895, 'aspect_ratio_min': 0.2415164039894489, 'aspect_ratio_max': 5.441182410168428, 'fill_ratio_min': 0.24718718178698312, 'merge_distance': 19}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.08s).
+Accumulating evaluation results...
+DONE (t=0.53s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.099
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.237
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.067
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.007
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.223
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.100
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.036
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.321
+[I 2026-02-23 13:33:40,103] Trial 155 finished with value: 0.23677201597415226 and parameters: {'alpha': 2.6738569140624664, 'std_bias': 4.6750744211957755, 'opening_size': 7, 'closing_size': 9, 'dilate_size': 9, 'remove_small_blobs': 545, 'area_min': 1419, 'area_max': 101043, 'aspect_ratio_min': 0.23679357835771245, 'aspect_ratio_max': 5.431365701845006, 'fill_ratio_min': 0.27010427108551394, 'merge_distance': 32}. Best is trial 106 with value: 0.34930707775950676.Best trial: 106. Best value: 0.349307:  76%|███████▌  | 19/25 [1:21:12<24:34, 245.68s/it]Best trial: 106. Best value: 0.349307:  76%|███████▌  | 19/25 [1:21:12<24:34, 245.68s/it]Best trial: 106. Best value: 0.349307:  80%|████████  | 20/25 [1:21:12<20:13, 242.62s/it]                                                                                         Best trial: 106. Best value: 0.349307:  80%|████████  | 20/25 [1:25:32<20:13, 242.62s/it]Best trial: 106. Best value: 0.349307:  80%|████████  | 20/25 [1:25:32<20:13, 242.62s/it]Best trial: 106. Best value: 0.349307:  84%|████████▍ | 21/25 [1:25:32<16:31, 247.88s/it]                                                                                         Best trial: 106. Best value: 0.349307:  84%|████████▍ | 21/25 [1:29:36<16:31, 247.88s/it]Best trial: 106. Best value: 0.349307:  84%|████████▍ | 21/25 [1:29:36<16:31, 247.88s/it]Best trial: 106. Best value: 0.349307:  88%|████████▊ | 22/25 [1:29:36<12:20, 246.73s/it]                                                                                         Best trial: 106. Best value: 0.349307:  88%|████████▊ | 22/25 [1:33:38<12:20, 246.73s/it]Best trial: 106. Best value: 0.349307:  88%|████████▊ | 22/25 [1:33:38<12:20, 246.73s/it]Best trial: 106. Best value: 0.349307:  92%|█████████▏| 23/25 [1:33:38<08:10, 245.49s/it]                                                                                         Best trial: 106. Best value: 0.349307:  92%|█████████▏| 23/25 [1:37:22<08:10, 245.49s/it]Best trial: 106. Best value: 0.349307:  92%|█████████▏| 23/25 [1:37:22<08:10, 245.49s/it]Best trial: 106. Best value: 0.349307:  96%|█████████▌| 24/25 [1:37:22<03:58, 238.83s/it]                                                                                         
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.04s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.92s).
+Accumulating evaluation results...
+DONE (t=0.44s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.105
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.249
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.068
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.080
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.140
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.096
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.247
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.247
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.242
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.253
+[I 2026-02-23 13:38:00,256] Trial 162 finished with value: 0.24858995451493793 and parameters: {'alpha': 2.509287931781287, 'std_bias': 4.999650988131685, 'opening_size': 3, 'closing_size': 11, 'dilate_size': 9, 'remove_small_blobs': 678, 'area_min': 1627, 'area_max': 116960, 'aspect_ratio_min': 0.22238116125420787, 'aspect_ratio_max': 4.872890346427264, 'fill_ratio_min': 0.24988244602820017, 'merge_distance': 33}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.03s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.24s).
+Accumulating evaluation results...
+DONE (t=0.31s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.124
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.317
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.073
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.066
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.204
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.112
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.246
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.246
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.209
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.289
+[I 2026-02-23 13:42:04,312] Trial 169 finished with value: 0.31749677955559796 and parameters: {'alpha': 2.3480051576557552, 'std_bias': 4.481909496252716, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 9, 'remove_small_blobs': 604, 'area_min': 1470, 'area_max': 111821, 'aspect_ratio_min': 0.20777601363593295, 'aspect_ratio_max': 6.456530615118517, 'fill_ratio_min': 0.19494385869826303, 'merge_distance': 29}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=2.33s).
+Accumulating evaluation results...
+DONE (t=0.36s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.121
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.309
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.073
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.082
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.168
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.107
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.246
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.246
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.236
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.258
+[I 2026-02-23 13:46:06,913] Trial 177 finished with value: 0.3088374619400977 and parameters: {'alpha': 2.100162597349139, 'std_bias': 4.42074717691302, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 7, 'remove_small_blobs': 574, 'area_min': 1550, 'area_max': 113751, 'aspect_ratio_min': 0.2054330381777411, 'aspect_ratio_max': 4.279821820295219, 'fill_ratio_min': 0.24093799148209544, 'merge_distance': 27}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.19s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.80s).
+Accumulating evaluation results...
+DONE (t=0.29s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.157
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.347
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.119
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.037
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.296
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.125
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.228
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.228
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.098
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.378
+[I 2026-02-23 13:49:50,198] Trial 186 finished with value: 0.3472601340256369 and parameters: {'alpha': 2.953618141139213, 'std_bias': 4.878053079598619, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 7, 'remove_small_blobs': 588, 'area_min': 1504, 'area_max': 108420, 'aspect_ratio_min': 0.245255774466722, 'aspect_ratio_max': 4.5664046681234005, 'fill_ratio_min': 0.2436932673640838, 'merge_distance': 25}. Best is trial 106 with value: 0.34930707775950676.
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.02s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=1.99s).
+Accumulating evaluation results...
+DONE (t=0.30s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.151
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.318
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.122
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.021
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.306
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.126
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.217
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.217
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.064
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.395
+[I 2026-02-23 13:53:24,281] Trial 193 finished with value: 0.31828325074509467 and parameters: {'alpha': 3.262643672327935, 'std_bias': 4.745348601692331, 'opening_size': 5, 'closing_size': 15, 'dilate_size': 7, 'remove_small_blobs': 557, 'area_min': 1509, 'area_max': 104572, 'aspect_ratio_min': 0.23952341060875917, 'aspect_ratio_max': 5.063043356089484, 'fill_ratio_min': 0.2487973785075671, 'merge_distance': 26}. Best is trial 106 with value: 0.34930707775950676.Best trial: 106. Best value: 0.349307:  96%|█████████▌| 24/25 [1:40:56<03:58, 238.83s/it]Best trial: 106. Best value: 0.349307:  96%|█████████▌| 24/25 [1:40:56<03:58, 238.83s/it]Best trial: 106. Best value: 0.349307: 100%|██████████| 25/25 [1:40:56<00:00, 231.41s/it]Best trial: 106. Best value: 0.349307: 100%|██████████| 25/25 [1:40:56<00:00, 242.25s/it]
+
+
+================================================================================
+OPTIMIZATION COMPLETE
+================================================================================
+
+Best AP50: 0.3493
+
+Best hyperparameters:
+  alpha: 2.840026271930218
+  std_bias: 4.769977313430562
+  opening_size: 5
+  closing_size: 15
+  dilate_size: 9
+  remove_small_blobs: 632
+  area_min: 1550
+  area_max: 109499
+  aspect_ratio_min: 0.22118807684047892
+  aspect_ratio_max: 4.474026431574192
+  fill_ratio_min: 0.20821692159573382
+  merge_distance: 28
+
+Total trials completed: 200
+Results saved to: optuna_still_no_temporal.db
+
+To visualize results, use optuna-dashboard:
+  optuna-dashboard sqlite:///optuna_still_no_temporal.db
