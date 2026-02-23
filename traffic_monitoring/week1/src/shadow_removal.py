@@ -63,9 +63,13 @@ class HSVBackgroundComparison(ShadowRemover):
         # Get background frame
         bg_frame = bg_model.background_image()
 
-        # Convert both to HSV
+        # Convert background to uint8 for consistent HSV conversion
+        # (frame is already uint8, background is float32)
+        bg_frame_uint8 = np.clip(bg_frame, 0, 255).astype(np.uint8)
+
+        # Convert both to HSV (H: [0,179], S: [0,255], V: [0,255])
         hsv_current = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV).astype(np.float32)
-        hsv_bg = cv2.cvtColor(bg_frame, cv2.COLOR_BGR2HSV).astype(np.float32)
+        hsv_bg = cv2.cvtColor(bg_frame_uint8, cv2.COLOR_BGR2HSV).astype(np.float32)
 
         h_curr, s_curr, v_curr = cv2.split(hsv_current)
         h_bg, s_bg, v_bg = cv2.split(hsv_bg)
@@ -137,7 +141,7 @@ class ChromaticityBackgroundComparison(ShadowRemover):
 
         # Convert to float and avoid division by zero
         frame_float = frame.astype(np.float32) + 1e-6
-        bg_float = bg_frame.astype(np.float32) + 1e-6
+        bg_float = np.clip(bg_frame, 0, 255).astype(np.float32) + 1e-6
 
         # Compute chromaticity: normalize each channel by total intensity
         # c_i = I_i / (I_r + I_g + I_b)
