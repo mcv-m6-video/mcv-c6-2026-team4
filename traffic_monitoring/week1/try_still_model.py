@@ -8,7 +8,7 @@ from matplotlib import pyplot as plt
 import numpy as np
 from tqdm import tqdm
 
-from src.object_detection import BoundingBox, CarDetector, TemporalCarDetector
+from src.object_detection import BoundingBox, CarDetector, TemporalCarDetector, merge_bboxes
 from src.models.still_models import GrayGaussianModel
 from src.models.adaptive_models import AdaptiveGrayGaussianModel
 from src.video_source import VideoPartSource
@@ -82,26 +82,26 @@ if __name__ == '__main__':
         # MedianFilter(3),
         # RegionOfInterestMasking.from_file(ROI_PATH),
         Opening((5, 5)),
-        Closing((5, 5)),
+        Closing((20, 20)),
         Dilate((7, 7)),
         RemoveSmallBlobs(300),
     )
     
-    detector = CarDetector(
-        area=[1000, 100000],
-        aspect_ratio=[0.1, 10.0],
-        fill_ratio=[0.2, 1.0]
-    )
-    
-    # detector = TemporalCarDetector(
-    #     base_detector=CarDetector(
-    #         area=[1000, 100000],
-    #         aspect_ratio=[0.1, 10.0],
-    #         fill_ratio=[0.2, 1.0]
-    #     ),
-    #     n_frames=3,
-    #     threshold=0.5
+    # detector = CarDetector(
+    #     area=[1000, 100000],
+    #     aspect_ratio=[0.1, 10.0],
+    #     fill_ratio=[0.2, 1.0]
     # )
+    
+    detector = TemporalCarDetector(
+        base_detector=CarDetector(
+            area=[1000, 10000000000],
+            aspect_ratio=[0.1, 10.0],
+            fill_ratio=[0.2, 1.0]
+        ),
+        n_frames=3,
+        threshold=0.5
+    )
     
     mask_writer = cv2.VideoWriter(
         OUTPUT_PATH,
@@ -110,12 +110,19 @@ if __name__ == '__main__':
         (test_source.width, test_source.height),
         isColor=False,
     )
-    
+
     detection_writer = cv2.VideoWriter(
         "predicted_detections.avi",
         cv2.VideoWriter_fourcc(*"XVID"),
         test_source.fps,
         (test_source.width, test_source.height),
+    )
+
+    side_by_side_writer = cv2.VideoWriter(
+        "side_by_side.avi",
+        cv2.VideoWriter_fourcc(*"XVID"),
+        test_source.fps,
+        (test_source.width * 2, test_source.height),
     )
     
     
@@ -133,6 +140,7 @@ if __name__ == '__main__':
 
         mask = postprocess(mask)
         bboxes = detector.detect(mask)
+        bboxes = merge_bboxes(bboxes, merge_distance=40)
         predictions[frame_id] = bboxes
                 
         if mask.dtype != np.uint8:
@@ -145,8 +153,12 @@ if __name__ == '__main__':
         mask_writer.write(mask)
         detection_writer.write(detections_frame)
 
+        mask_bgr = cv2.cvtColor(mask, cv2.COLOR_GRAY2BGR)
+        side_by_side_writer.write(np.concatenate([mask_bgr, detections_frame], axis=1))
+
     mask_writer.release()
     detection_writer.release()
+    side_by_side_writer.release()
 
     gt_for_eval = {fid: boxes for fid, boxes in annotations.items() if fid in predictions}
     metrics = evaluate_detections(gt_for_eval, predictions)
