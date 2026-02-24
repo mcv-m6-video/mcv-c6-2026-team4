@@ -1,0 +1,48 @@
+// Computer Vision Pipeline
+digraph Pipeline_Flowchart {
+	bgcolor=white fontname=Arial rankdir=TD
+	node [color=black fontname=Arial shape=box style=filled]
+	Video [label=Video fillcolor="#D4E1F5" shape=ellipse]
+	Split [label="Split Video" fillcolor="#FFF2CC" shape=diamond]
+	TrainFrames [label="Train Frames" fillcolor="#D5E8D4" shape=parallelogram]
+	Fit [label="Fit Model
+(Background Estimation)" fillcolor="#D4E1F5"]
+	Model [label="Background Model
+(Mean/Median, Variance)" fillcolor="#D5E8D4" shape=cylinder]
+	TestFrames [label="Test Frames" fillcolor="#D5E8D4" shape=parallelogram]
+	Iterate [label="Iterate Frames" fillcolor="#FFF2CC" shape=diamond]
+	Subtract [label="Background Subtraction
+(Predict)" fillcolor="#D4E1F5"]
+	RawMask [label="Raw Foreground Mask" fillcolor="#D5E8D4" shape=parallelogram]
+	Postprocess [label="Mask Post-process
+(Morphology, Cleaning)" fillcolor="#D4E1F5"]
+	Detect [label="Detect Objects" fillcolor="#D4E1F5"]
+	BBoxes [label="Bounding Boxes" fillcolor="#D5E8D4" shape=parallelogram]
+	Merge [label="Merge Boxes" fillcolor="#D4E1F5"]
+	Yield [label="Yield Detections" fillcolor="#D4E1F5"]
+	Collect [label="Collect Detections" fillcolor="#D4E1F5"]
+	Eval [label=Evaluation fillcolor="#E1D5E7"]
+	Ann [label="Annotations
+(XML)" fillcolor="#D5E8D4" shape=parallelogram]
+	Metrics [label="Final Metrics
+(e.g., AP50)" fillcolor="#E1D5E7" shape=ellipse]
+	Video -> Split
+	Split -> TrainFrames [label="0-25%"]
+	Split -> TestFrames [label="25-100%"]
+	TrainFrames -> Fit
+	Fit -> Model
+	TestFrames -> Iterate
+	Iterate -> Subtract
+	Model -> Subtract [style=dashed]
+	Subtract -> RawMask
+	RawMask -> Postprocess
+	Postprocess -> Detect
+	Detect -> BBoxes
+	BBoxes -> Merge
+	Merge -> Iterate [label=" Next Frame"]
+	Iterate -> Yield [label=" Complete"]
+	Yield -> Collect
+	Collect -> Eval
+	Ann -> Eval
+	Eval -> Metrics
+}
