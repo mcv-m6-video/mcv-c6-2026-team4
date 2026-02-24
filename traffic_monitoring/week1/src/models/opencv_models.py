@@ -180,7 +180,7 @@ class LSBPBackgroundSubtractor(OpenCVBackgroundSubtractor):
             nSamples=n_samples,
             LSBPRadius=lsbp_radius,
             Tlower=tlsbp_threshold,
-            Tupper=tlsbp_threshold,
+            Tupper=tlsbp_threshold * 2,
             Tinc=t_inc,
             Tdec=t_dec,
             Rscale=r_scale,
