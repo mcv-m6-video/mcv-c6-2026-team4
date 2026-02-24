@@ -15,6 +15,41 @@ from try_still_model import draw_bboxes
 import cProfile
 import pstats
 from io import StringIO
+import matplotlib.pyplot as plt
+
+
+def save_confidence_examples(mask, detections, low_threshold=0.3, high_threshold=0.7):
+    """Save examples of low and high confidence detections with their masks."""
+    # Separate detections by confidence
+    low_conf = [d for d in detections if d.confidence and d.confidence < low_threshold]
+    high_conf = [d for d in detections if d.confidence and d.confidence > high_threshold]
+
+    if not low_conf: # and not high_conf:
+        return False
+
+    mask_bgr = cv2.cvtColor(mask if mask.dtype == np.uint8 else (mask.astype(bool).astype(np.uint8) * 255), cv2.COLOR_GRAY2BGR)
+
+    if low_conf:
+        # Draw low confidence detections in red
+        low_vis = mask_bgr.copy()
+        for det in low_conf:
+            cv2.rectangle(low_vis, (int(det.left), int(det.top)), (int(det.right), int(det.bottom)), (0, 0, 255), 2)
+            cv2.putText(low_vis, f"conf={det.confidence:.2f}", (int(det.left), int(det.top)-5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 2)
+        cv2.imwrite("low_confidence_example.png", low_vis)
+        print(f"Saved low_confidence_example.png with {len(low_conf)} detections")
+
+    if False and high_conf:
+        # Draw high confidence detections in green
+        high_vis = mask_bgr.copy()
+        for det in high_conf:
+            cv2.rectangle(high_vis, (int(det.left), int(det.top)), (int(det.right), int(det.bottom)), (0, 255, 0), 2)
+            cv2.putText(high_vis, f"conf={det.confidence:.2f}", (int(det.left), int(det.top)-5),
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
+        cv2.imwrite("high_confidence_example.png", high_vis)
+        print(f"Saved high_confidence_example.png with {len(high_conf)} detections")
+
+    return True
 
 
 if __name__ == '__main__':
@@ -27,25 +62,31 @@ if __name__ == '__main__':
     test_source = VideoPartSource(VIDEO_PATH, 0.25, 1.0)
     annotations = load_annotations(ANNOTATIONS_PATH)
     
-    model = AdaptiveGrayGaussianModel(3.0, mean_rho=0.05, variance_rho=0.05)
-    # model = GrayGaussianModel(3.0)
+    # model = AdaptiveGrayGaussianModel(2.84, mean_rho=0.05, variance_rho=0.05, std_bias=4.769977313430562)
+    model = GrayGaussianModel(3.0, 6.5)
     
     # TODO: for the moment these are arbitrary hyperparameters
     postprocess = MaskPostprocess(
         Opening((5, 5)),
-        Closing((20, 20)),
-        Dilate((7, 7)),
-        RemoveSmallBlobs(300),
+        Closing((15, 15)),
+        Dilate((9, 9)),
+        RemoveSmallBlobs(632),
     )
     
     detector = TemporalCarDetector(
         base_detector=CarDetector(
-            area=[1000, 10000000000],
-            aspect_ratio=[0.1, 10.0],
-            fill_ratio=[0.2, 1.0]
+            area=[1550, 10000000000], # 109499 ?
+            aspect_ratio=[0.22118807684047892, 4.474026431574192],
+            fill_ratio=[0.20821692159573382, 1.0]
         ),
         n_frames=3,
         threshold=0.5
+    )
+    
+    detector = CarDetector(
+        area=[1550, 10000000000], # 109499 ?
+        aspect_ratio=[0.22118807684047892, 4.474026431574192],
+        fill_ratio=[0.20821692159573382, 1.0]
     )
     
     pipeline = DetectionPipeline(
@@ -53,12 +94,46 @@ if __name__ == '__main__':
         shadow_remover=HSVBackgroundComparison(),
         mask_posprocess=postprocess,
         detector=detector,
-        bbox_merger=PolBoundingBoxMerger(merge_distance=40)
+        bbox_merger=PolBoundingBoxMerger(merge_distance=28)
     )
 
     print("Fitting")
     pipeline.fit_from_source(train_source)
     
+    cv2.imwrite("color_background.png", np.round(model.background).astype(np.uint8))
+    cv2.imwrite("gray_background.png", np.round(model.mean).astype(np.uint8))
+    cv2.imwrite("std.png", np.round(model.std * 255 / model.std.max()).astype(np.uint8))
+
+    # Create legend images mapping intensity to std values
+    std_min = np.min(model.std)
+    std_max = np.max(model.std)
+
+    # Vertical legend
+    fig, ax = plt.subplots(figsize=(1.5, 6))
+    fig.subplots_adjust(right=0.5)
+    norm = plt.Normalize(vmin=std_min, vmax=std_max)
+    cmap = plt.cm.gray
+    cbar = plt.colorbar(
+        plt.cm.ScalarMappable(norm=norm, cmap=cmap),
+        cax=ax,
+        orientation='vertical'
+    )
+    cbar.set_label('Standard Deviation', rotation=270, labelpad=20)
+    plt.savefig('std_legend_vertical.png', bbox_inches='tight', dpi=150)
+    plt.close()
+
+    # Horizontal legend
+    fig, ax = plt.subplots(figsize=(6, 1))
+    cbar = plt.colorbar(
+        plt.cm.ScalarMappable(norm=norm, cmap=cmap),
+        cax=ax,
+        orientation='horizontal'
+    )
+    cbar.set_label('Standard Deviation')
+    plt.savefig('std_legend_horizontal.png', bbox_inches='tight', dpi=150)
+    plt.close()
+
+    # exit()
 
     mask_writer = cv2.VideoWriter(
         OUTPUT_PATH,
@@ -82,17 +157,22 @@ if __name__ == '__main__':
         (test_source.width * 2, test_source.height),
     )
     
-    
+
     predictions = {}
+    found_examples = False  # Track if we've found good examples
 
     print("Predicting")
     masks_and_frames = zip(
         pipeline.predict_from_source_with_extras(test_source),
         range(test_source.start_frame, test_source.end_frame) # TODO: +1???
     )
-    
+
     for (detections, extras), frame_id in tqdm(masks_and_frames, total=test_source.n_frames): # bastante F hacer esto
         predictions[frame_id] = detections
+
+        # Try to save examples of low/high confidence detections
+        if not found_examples:
+            found_examples = save_confidence_examples(extras["postprocessed_mask"], detections)
         
         mask = extras["postprocessed_mask"]
         if mask.dtype != np.uint8:
