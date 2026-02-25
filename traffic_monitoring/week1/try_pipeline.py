@@ -56,14 +56,14 @@ if __name__ == '__main__':
     ANNOTATIONS_PATH = "../ai_challenge_s03_c010-full_annotation.xml"
     VIDEO_PATH = "../AICity_data/AICity_data/train/S03/c010/vdo.avi"
     ROI_PATH = "../AICity_data/AICity_data/train/S03/c010/roi.jpg"
-    OUTPUT_PATH = "predicted_masks.avi"
+    OUTPUT_PATH = "adaptive_predicted_masks.avi"
     
     train_source = VideoPartSource(VIDEO_PATH, 0.0, 0.25)
     test_source = VideoPartSource(VIDEO_PATH, 0.25, 1.0)
     annotations = load_annotations(ANNOTATIONS_PATH)
     
-    # model = AdaptiveGrayGaussianModel(2.84, mean_rho=0.05, variance_rho=0.05, std_bias=4.769977313430562)
-    model = GrayGaussianModel(3.0, 6.5)
+    model = AdaptiveGrayGaussianModel(2.0933154680482495, mean_rho=0.009115651856561206, variance_rho=0.07520599715083304, std_bias=4.207707917671822)
+    # model = GrayGaussianModel(3.0, 6.5)
     
     # TODO: for the moment these are arbitrary hyperparameters
     postprocess = MaskPostprocess(
@@ -91,7 +91,12 @@ if __name__ == '__main__':
     
     pipeline = DetectionPipeline(
         background_model=model,
-        shadow_remover=HSVBackgroundComparison(),
+        shadow_remover=HSVBackgroundComparison(
+            hue_threshold=29.905532124564267,
+            value_ratio_min=0.5078298592725248,
+            value_ratio_max=0.9948932249196348,
+            saturation_diff_threshold=37.1876589771072,
+        ),
         mask_posprocess=postprocess,
         detector=detector,
         bbox_merger=PolBoundingBoxMerger(merge_distance=28)
@@ -144,14 +149,14 @@ if __name__ == '__main__':
     )
 
     detection_writer = cv2.VideoWriter(
-        "predicted_detections.avi",
+        "adaptive_predicted_detections.avi",
         cv2.VideoWriter_fourcc(*"XVID"),
         test_source.fps,
         (test_source.width, test_source.height),
     )
 
     side_by_side_writer = cv2.VideoWriter(
-        "side_by_side.avi",
+        "adaptive_side_by_side.avi",
         cv2.VideoWriter_fourcc(*"XVID"),
         test_source.fps,
         (test_source.width * 2, test_source.height),
