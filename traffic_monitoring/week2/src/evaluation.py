@@ -88,35 +88,35 @@ def show_metrics(metrics):
         print(f"{name} = {value}")
 
 
+import xml.etree.ElementTree as ET
+
 def load_annotations(path: str):
     tree = ET.parse(path)
-    boxes = tree.findall("track/box")
+    # Find all track elements to filter by the 'label' attribute
+    tracks = tree.findall("track")
     boxes_per_frame = dict()
-    for box in boxes:
-        frame    = int(box.get("frame"))
-        xtl      = float(box.get("xtl"))
-        ytl      = float(box.get("ytl"))
-        xbr      = float(box.get("xbr"))
-        ybr      = float(box.get("ybr"))
-        outside  = box.get("outside") == "1"
-        occluded = box.get("occluded") == "1"
-        keyframe = box.get("keyframe") == "1"
 
-        for attr in box.findall("attribute"):
-            if attr.get("name") == "parked":
-                parked = attr.text == "true"
-
-        bbox = BoundingBox(
-            top=ytl,
-            bottom=ybr,
-            left=xtl,
-            right=xbr,
-            confidence=1.0
-        )
-        
-        if frame not in boxes_per_frame:
-            boxes_per_frame[frame] = [bbox]
-        else:
-            boxes_per_frame[frame].append(bbox)
+    for track in tracks:
+        # Check if the track label is 'car'
+        if track.get("label") == "car":
+            for box in track.findall("box"):
+                frame = int(box.get("frame"))
+                xtl   = float(box.get("xtl"))
+                ytl   = float(box.get("ytl"))
+                xbr   = float(box.get("xbr"))
+                ybr   = float(box.get("ybr"))
+                
+                bbox = BoundingBox(
+                    top=ytl,
+                    bottom=ybr,
+                    left=xtl,
+                    right=xbr,
+                    confidence=1.0
+                )
+                
+                if frame not in boxes_per_frame:
+                    boxes_per_frame[frame] = [bbox]
+                else:
+                    boxes_per_frame[frame].append(bbox)
     
     return boxes_per_frame
