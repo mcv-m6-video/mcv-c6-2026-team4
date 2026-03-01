@@ -3,9 +3,11 @@ import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
+from scipy.optimize import linear_sum_assignment
 
 import cv2
 import numpy as np
+import optuna
 from tqdm import tqdm
 from ultralytics import YOLO
 
@@ -212,15 +214,200 @@ def save_gt_mot_format(boxes_with_tracks: Dict[int, List[Tuple[BoundingBox, int]
                 f.write(f"{frame},{track_id},{left:.2f},{top:.2f},{width:.2f},{height:.2f},1,-1,-1,-1\n")
 
 
+# ==================== TRACKING METRICS (Task 2.3) ====================
+
+def compute_tracking_metrics(
+    gt_with_tracks: Dict[int, List[Tuple[BoundingBox, int]]],
+    pred_detections: List[Detection],
+    iou_threshold: float = 0.5
+) -> Dict[str, float]:
+    """Compute IDF1, HOTA, MOTA and other tracking metrics."""
+
+    pred_by_frame = defaultdict(list)
+    for det in pred_detections:
+        pred_by_frame[det.frame_id].append(det)
+
+    all_frames = sorted(set(gt_with_tracks.keys()) | set(pred_by_frame.keys()))
+
+    # For MOTA
+    total_gt = 0
+    total_fp = 0
+    total_fn = 0
+    total_id_switches = 0
+
+    # For IDF1
+    total_idtp = 0
+    total_idfp = 0
+    total_idfn = 0
+
+    # Track ID mappings (pred_id -> gt_id)
+    last_match = {}  # pred_track_id -> gt_track_id from previous frame
+
+    # For HOTA components
+    detection_matches = []  # list of (iou, pred_track, gt_track)
+
+    gt_track_ids = set()
+    pred_track_ids = set()
+
+    for frame_id in all_frames:
+        gt_boxes_tracks = gt_with_tracks.get(frame_id, [])
+        pred_dets = pred_by_frame.get(frame_id, [])
+
+        gt_boxes = [bt[0] for bt in gt_boxes_tracks]
+        gt_ids = [bt[1] for bt in gt_boxes_tracks]
+        pred_boxes = [d.bbox for d in pred_dets]
+        pred_ids = [d.track_id for d in pred_dets]
+
+        for gid in gt_ids:
+            gt_track_ids.add(gid)
+        for pid in pred_ids:
+            pred_track_ids.add(pid)
+
+        total_gt += len(gt_boxes)
+
+        if len(gt_boxes) == 0:
+            total_fp += len(pred_boxes)
+            total_idfp += len(pred_boxes)
+            continue
+
+        if len(pred_boxes) == 0:
+            total_fn += len(gt_boxes)
+            total_idfn += len(gt_boxes)
+            continue
+
+        iou_matrix = compute_iou_matrix(gt_boxes, pred_boxes)
+
+        cost_matrix = 1 - iou_matrix
+        cost_matrix[iou_matrix < iou_threshold] = 1e6
+
+        gt_indices, pred_indices = linear_sum_assignment(cost_matrix)
+
+        matched_gt = set()
+        matched_pred = set()
+        current_match = {}
+
+        for gi, pi in zip(gt_indices, pred_indices):
+            if iou_matrix[gi, pi] >= iou_threshold:
+                matched_gt.add(gi)
+                matched_pred.add(pi)
+
+                gt_id = gt_ids[gi]
+                pred_id = pred_ids[pi]
+                current_match[pred_id] = gt_id
+
+                detection_matches.append((iou_matrix[gi, pi], pred_id, gt_id))
+
+                total_idtp += 1
+
+                if pred_id in last_match and last_match[pred_id] != gt_id:
+                    total_id_switches += 1
+
+        total_fn += len(gt_boxes) - len(matched_gt)
+        total_fp += len(pred_boxes) - len(matched_pred)
+        total_idfn += len(gt_boxes) - len(matched_gt)
+        total_idfp += len(pred_boxes) - len(matched_pred)
+
+        last_match = current_match
+
+    # MOTA
+    mota = 1 - (total_fn + total_fp + total_id_switches) / max(total_gt, 1)
+    mota = max(mota, -1.0)  # MOTA can be negative
+
+    # IDF1
+    idf1 = 2 * total_idtp / max(2 * total_idtp + total_idfp + total_idfn, 1)
+
+    # HOTA computation
+    # DetA = detection accuracy
+    det_a = total_idtp / max(total_idtp + total_fn + total_fp, 1)
+
+    # AssA = association accuracy (average over matched detections)
+    if detection_matches:
+        # Group matches by (pred_track, gt_track) pairs
+        track_pairs = defaultdict(list)
+        for iou_val, pred_id, gt_id in detection_matches:
+            track_pairs[(pred_id, gt_id)].append(iou_val)
+
+        # Count TPA, FPA, FNA for each ground truth track
+        gt_track_counts = defaultdict(int)
+        pred_track_counts = defaultdict(int)
+        pair_counts = defaultdict(int)
+
+        for det in pred_detections:
+            pred_track_counts[det.track_id] += 1
+
+        for frame_id, boxes_tracks in gt_with_tracks.items():
+            for _, gt_id in boxes_tracks:
+                gt_track_counts[gt_id] += 1
+
+        for (pred_id, gt_id), ious in track_pairs.items():
+            pair_counts[(pred_id, gt_id)] = len(ious)
+
+        ass_scores = []
+        for (pred_id, gt_id), tpa in pair_counts.items():
+            fpa = pred_track_counts[pred_id] - tpa
+            fna = gt_track_counts[gt_id] - tpa
+            ass_score = tpa / max(tpa + fpa + fna, 1)
+            for _ in range(tpa):
+                ass_scores.append(ass_score)
+
+        ass_a = np.mean(ass_scores) if ass_scores else 0.0
+    else:
+        ass_a = 0.0
+
+    # HOTA = sqrt(DetA * AssA)
+    hota = np.sqrt(det_a * ass_a)
+
+    # Additional metrics
+    precision = total_idtp / max(total_idtp + total_fp, 1)
+    recall = total_idtp / max(total_idtp + total_fn, 1)
+
+    return {
+        "HOTA": hota,
+        "IDF1": idf1,
+        "MOTA": mota,
+        "DetA": det_a,
+        "AssA": ass_a,
+        "Precision": precision,
+        "Recall": recall,
+        "ID_Switches": total_id_switches,
+        "FP": total_fp,
+        "FN": total_fn,
+        "GT_Tracks": len(gt_track_ids),
+        "Pred_Tracks": len(pred_track_ids),
+    }
+
+
+def print_metrics(metrics: Dict[str, float]):
+    print("\n" + "=" * 50)
+    print("TRACKING METRICS")
+    print("=" * 50)
+    print(f"  HOTA:        {metrics['HOTA']:.4f}")
+    print(f"  IDF1:        {metrics['IDF1']:.4f}")
+    print(f"  MOTA:        {metrics['MOTA']:.4f}")
+    print("-" * 50)
+    print(f"  DetA:        {metrics['DetA']:.4f}")
+    print(f"  AssA:        {metrics['AssA']:.4f}")
+    print(f"  Precision:   {metrics['Precision']:.4f}")
+    print(f"  Recall:      {metrics['Recall']:.4f}")
+    print("-" * 50)
+    print(f"  ID Switches: {metrics['ID_Switches']}")
+    print(f"  FP:          {metrics['FP']}")
+    print(f"  FN:          {metrics['FN']}")
+    print(f"  GT Tracks:   {metrics['GT_Tracks']}")
+    print(f"  Pred Tracks: {metrics['Pred_Tracks']}")
+    print("=" * 50)
+
+
 def run_detector(
     video_path: str,
     model_name: str = "yolov8n.pt",
     conf_threshold: float = 0.5,
     car_class_id: int = 2,
     start_frac: float = 0.0,
-    end_frac: float = 1.0
+    end_frac: float = 1.0,
+    device: str = "cuda"
 ) -> Dict[int, List[BoundingBox]]:
-    print(f"Loading model: {model_name}...")
+    print(f"Loading model: {model_name} on {device}...")
     model = YOLO(model_name)
 
     print(f"Loading video: {video_path}...")
@@ -231,7 +418,7 @@ def run_detector(
     current_frame_id = video_source.start_frame
 
     for frame in tqdm(video_source, total=len(video_source)):
-        results = model.predict(frame, verbose=False, conf=conf_threshold)
+        results = model.predict(frame, verbose=False, conf=conf_threshold, device=device)
 
         frame_detections = []
         for result in results:
@@ -316,6 +503,74 @@ def visualize_tracking(
     print(f"Visualization saved to: {output_path}")
 
 
+def run_tracking_experiment(
+    pred_per_frame: Dict[int, List[BoundingBox]],
+    gt_with_tracks: Dict[int, List[Tuple[BoundingBox, int]]],
+    iou_threshold: float = 0.3,
+    max_age: int = 5
+) -> Tuple[List[Detection], Dict[str, float]]:
+    """Run tracking with given parameters and return detections + metrics."""
+    tracker = MaxOverlapTracker(iou_threshold=iou_threshold, max_age=max_age)
+
+    all_frame_ids = sorted(pred_per_frame.keys())
+    for frame_id in all_frame_ids:
+        detections = pred_per_frame[frame_id]
+        tracker.update(frame_id, detections)
+
+    tracked_detections = tracker.get_all_detections()
+    metrics = compute_tracking_metrics(gt_with_tracks, tracked_detections)
+
+    return tracked_detections, metrics
+
+
+def optuna_parameter_search(
+    pred_per_frame: Dict[int, List[BoundingBox]],
+    gt_with_tracks: Dict[int, List[Tuple[BoundingBox, int]]],
+    n_trials: int = 50,
+    metric: str = "HOTA"
+) -> Dict:
+    """Bayesian optimization with Optuna for tracking parameters."""
+
+    def objective(trial):
+        iou_threshold = trial.suggest_float("iou_threshold", 0.05, 0.7)
+        max_age = trial.suggest_int("max_age", 1, 30)
+
+        _, metrics = run_tracking_experiment(
+            pred_per_frame, gt_with_tracks,
+            iou_threshold=iou_threshold, max_age=max_age
+        )
+
+        return metrics[metric]
+
+    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    study = optuna.create_study(
+        direction="maximize",
+        sampler=optuna.samplers.TPESampler(seed=42)
+    )
+
+    print(f"\n=== Optuna Bayesian Search ({n_trials} trials, optimizing {metric}) ===")
+    study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
+
+    best_params = study.best_params
+    best_value = study.best_value
+
+    print(f"\nBest {metric}: {best_value:.4f}")
+    print(f"Best params: IoU={best_params['iou_threshold']:.3f}, MaxAge={best_params['max_age']}")
+
+    _, best_metrics = run_tracking_experiment(
+        pred_per_frame, gt_with_tracks,
+        iou_threshold=best_params["iou_threshold"],
+        max_age=best_params["max_age"]
+    )
+
+    return {
+        "best_params": best_params,
+        "best_value": best_value,
+        "best_metrics": best_metrics,
+        "study": study
+    }
+
+
 def main():
     VIDEO_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
     XML_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
@@ -324,6 +579,9 @@ def main():
     CONF_THRESHOLD = 0.5
     IOU_THRESHOLD = 0.3
     MAX_AGE = 5
+
+    DO_PARAM_SEARCH = True
+    CREATE_VIS = True
 
     OUTPUT_DIR = "results/task_2_1"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -339,35 +597,48 @@ def main():
     print(f"Video: {VIDEO_PATH}")
     print(f"Annotations: {XML_PATH}")
 
+    _, gt_with_tracks = load_annotations_with_tracks(XML_PATH)
+
     print("\n=== Step 1: Running Object Detection ===")
     pred_per_frame = run_detector(VIDEO_PATH, MODEL_NAME, CONF_THRESHOLD)
     print(f"Detected objects in {len(pred_per_frame)} frames")
 
+    if DO_PARAM_SEARCH:
+        search_results = optuna_parameter_search(
+            pred_per_frame, gt_with_tracks,
+            n_trials=50,
+            metric="HOTA"
+        )
+
+        best = search_results["best_params"]
+        IOU_THRESHOLD = best["iou_threshold"]
+        MAX_AGE = best["max_age"]
+        print(f"\nUsing best parameters: IoU={IOU_THRESHOLD:.3f}, MaxAge={MAX_AGE}")
+
     print("\n=== Step 2: Running Maximum Overlap Tracker ===")
-    tracker = MaxOverlapTracker(iou_threshold=IOU_THRESHOLD, max_age=MAX_AGE)
+    tracked_detections, metrics = run_tracking_experiment(
+        pred_per_frame, gt_with_tracks,
+        iou_threshold=IOU_THRESHOLD, max_age=MAX_AGE
+    )
 
-    all_frame_ids = sorted(pred_per_frame.keys())
-    for frame_id in tqdm(all_frame_ids, desc="Tracking"):
-        detections = pred_per_frame[frame_id]
-        tracker.update(frame_id, detections)
-
-    tracked_detections = tracker.get_all_detections()
-    print(f"Created {len(tracker.tracks)} unique tracks")
+    print(f"Created {len(set(d.track_id for d in tracked_detections))} unique tracks")
     print(f"Total tracked detections: {len(tracked_detections)}")
+
+    print_metrics(metrics)
 
     print("\n=== Step 3: Saving Results ===")
     pred_mot_path = os.path.join(OUTPUT_DIR, "pred_tracking.txt")
     save_tracking_results_mot(tracked_detections, pred_mot_path)
     print(f"Predictions saved to: {pred_mot_path}")
 
-    _, gt_with_tracks = load_annotations_with_tracks(XML_PATH)
     gt_mot_path = os.path.join(OUTPUT_DIR, "gt_tracking.txt")
     save_gt_mot_format(gt_with_tracks, gt_mot_path)
     print(f"Ground truth saved to: {gt_mot_path}")
 
-    print("\n=== Step 4: Creating Visualization ===")
-    vis_path = os.path.join(OUTPUT_DIR, "tracking_visualization.mp4")
-    visualize_tracking(VIDEO_PATH, tracked_detections, vis_path)
+    if CREATE_VIS:
+        print("\n=== Step 4: Creating Visualization ===")
+        vis_path = os.path.join(OUTPUT_DIR, "tracking_visualization.mp4")
+        visualize_tracking(VIDEO_PATH, tracked_detections, vis_path)
 
     print("\n=== Task 2.1 Complete ===")
     print(f"Results saved in: {OUTPUT_DIR}")
