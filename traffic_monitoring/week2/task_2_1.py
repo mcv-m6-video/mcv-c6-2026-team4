@@ -1,4 +1,5 @@
 import os
+import json
 import xml.etree.ElementTree as ET
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
@@ -8,6 +9,14 @@ from scipy.optimize import linear_sum_assignment
 import cv2
 import numpy as np
 import optuna
+from optuna.visualization import (
+    plot_optimization_history,
+    plot_param_importances,
+    plot_contour,
+    plot_parallel_coordinate,
+    plot_slice,
+)
+import plotly
 from tqdm import tqdm
 from ultralytics import YOLO
 
@@ -526,36 +535,130 @@ def run_tracking_experiment(
 def optuna_parameter_search(
     pred_per_frame: Dict[int, List[BoundingBox]],
     gt_with_tracks: Dict[int, List[Tuple[BoundingBox, int]]],
-    n_trials: int = 50,
+    output_dir: str,
+    n_trials: int = 200,
     metric: str = "HOTA"
 ) -> Dict:
-    """Bayesian optimization with Optuna for tracking parameters."""
+
+    os.makedirs(output_dir, exist_ok=True)
+    db_path = os.path.join(output_dir, "optuna_tracking.db")
+    study_name = "tracking_overlap_study"
 
     def objective(trial):
-        iou_threshold = trial.suggest_float("iou_threshold", 0.05, 0.7)
-        max_age = trial.suggest_int("max_age", 1, 30)
+        iou_threshold = trial.suggest_float("iou_threshold", 0.01, 0.8)
+        max_age = trial.suggest_int("max_age", 1, 50)
 
         _, metrics = run_tracking_experiment(
             pred_per_frame, gt_with_tracks,
             iou_threshold=iou_threshold, max_age=max_age
         )
 
+        trial.set_user_attr("HOTA", metrics["HOTA"])
+        trial.set_user_attr("IDF1", metrics["IDF1"])
+        trial.set_user_attr("MOTA", metrics["MOTA"])
+        trial.set_user_attr("DetA", metrics["DetA"])
+        trial.set_user_attr("AssA", metrics["AssA"])
+        trial.set_user_attr("ID_Switches", metrics["ID_Switches"])
+        trial.set_user_attr("Precision", metrics["Precision"])
+        trial.set_user_attr("Recall", metrics["Recall"])
+
         return metrics[metric]
 
-    optuna.logging.set_verbosity(optuna.logging.WARNING)
+    storage = f"sqlite:///{db_path}"
+
     study = optuna.create_study(
+        study_name=study_name,
+        storage=storage,
         direction="maximize",
-        sampler=optuna.samplers.TPESampler(seed=42)
+        sampler=optuna.samplers.TPESampler(seed=42),
+        load_if_exists=True
     )
 
-    print(f"\n=== Optuna Bayesian Search ({n_trials} trials, optimizing {metric}) ===")
+    print(f"\n{'='*60}")
+    print(f"OPTUNA BAYESIAN HYPERPARAMETER SEARCH")
+    print(f"{'='*60}")
+    print(f"  Trials: {n_trials}")
+    print(f"  Metric: {metric}")
+    print(f"  Database: {db_path}")
+    print(f"  Study: {study_name}")
+    print(f"{'='*60}\n")
+
     study.optimize(objective, n_trials=n_trials, show_progress_bar=True)
 
     best_params = study.best_params
     best_value = study.best_value
 
-    print(f"\nBest {metric}: {best_value:.4f}")
-    print(f"Best params: IoU={best_params['iou_threshold']:.3f}, MaxAge={best_params['max_age']}")
+    print(f"\n{'='*60}")
+    print(f"OPTIMIZATION COMPLETE")
+    print(f"{'='*60}")
+    print(f"  Best {metric}: {best_value:.4f}")
+    print(f"  Best IoU Threshold: {best_params['iou_threshold']:.4f}")
+    print(f"  Best Max Age: {best_params['max_age']}")
+    print(f"{'='*60}\n")
+
+    print("Generating visualization plots...")
+    plots_dir = os.path.join(output_dir, "optuna_plots")
+    os.makedirs(plots_dir, exist_ok=True)
+
+    try:
+        fig = plot_optimization_history(study)
+        fig.write_html(os.path.join(plots_dir, "optimization_history.html"))
+        fig.write_image(os.path.join(plots_dir, "optimization_history.png"), scale=2)
+        print(f"  - Optimization history saved")
+    except Exception as e:
+        print(f"  - Could not generate optimization history: {e}")
+
+    try:
+        fig = plot_param_importances(study)
+        fig.write_html(os.path.join(plots_dir, "param_importances.html"))
+        fig.write_image(os.path.join(plots_dir, "param_importances.png"), scale=2)
+        print(f"  - Parameter importances saved")
+    except Exception as e:
+        print(f"  - Could not generate param importances: {e}")
+
+    try:
+        fig = plot_contour(study, params=["iou_threshold", "max_age"])
+        fig.write_html(os.path.join(plots_dir, "contour.html"))
+        fig.write_image(os.path.join(plots_dir, "contour.png"), scale=2)
+        print(f"  - Contour plot saved")
+    except Exception as e:
+        print(f"  - Could not generate contour plot: {e}")
+
+    try:
+        fig = plot_parallel_coordinate(study)
+        fig.write_html(os.path.join(plots_dir, "parallel_coordinate.html"))
+        fig.write_image(os.path.join(plots_dir, "parallel_coordinate.png"), scale=2)
+        print(f"  - Parallel coordinate plot saved")
+    except Exception as e:
+        print(f"  - Could not generate parallel coordinate: {e}")
+
+    try:
+        fig = plot_slice(study)
+        fig.write_html(os.path.join(plots_dir, "slice.html"))
+        fig.write_image(os.path.join(plots_dir, "slice.png"), scale=2)
+        print(f"  - Slice plot saved")
+    except Exception as e:
+        print(f"  - Could not generate slice plot: {e}")
+
+    results_summary = {
+        "best_params": best_params,
+        "best_value": best_value,
+        "metric": metric,
+        "n_trials": len(study.trials),
+        "all_trials": []
+    }
+
+    for trial in study.trials:
+        results_summary["all_trials"].append({
+            "number": trial.number,
+            "params": trial.params,
+            "value": trial.value,
+            "user_attrs": trial.user_attrs
+        })
+
+    with open(os.path.join(output_dir, "optuna_results.json"), "w") as f:
+        json.dump(results_summary, f, indent=2)
+    print(f"  - Results JSON saved")
 
     _, best_metrics = run_tracking_experiment(
         pred_per_frame, gt_with_tracks,
@@ -563,17 +666,20 @@ def optuna_parameter_search(
         max_age=best_params["max_age"]
     )
 
+    print(f"\nAll outputs saved to: {output_dir}")
+
     return {
         "best_params": best_params,
         "best_value": best_value,
         "best_metrics": best_metrics,
-        "study": study
+        "study": study,
+        "db_path": db_path
     }
 
 
 def main():
-    VIDEO_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
-    XML_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
+    VIDEO_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
+    XML_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
 
     MODEL_NAME = "yolov8n.pt"
     CONF_THRESHOLD = 0.5
@@ -582,8 +688,9 @@ def main():
 
     DO_PARAM_SEARCH = True
     CREATE_VIS = True
+    N_TRIALS = 500
 
-    OUTPUT_DIR = "results/task_2_1"
+    OUTPUT_DIR = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_1"
     os.makedirs(OUTPUT_DIR, exist_ok=True)
 
     if not os.path.exists(VIDEO_PATH):
@@ -606,14 +713,15 @@ def main():
     if DO_PARAM_SEARCH:
         search_results = optuna_parameter_search(
             pred_per_frame, gt_with_tracks,
-            n_trials=50,
+            output_dir=OUTPUT_DIR,
+            n_trials=N_TRIALS,
             metric="HOTA"
         )
 
         best = search_results["best_params"]
         IOU_THRESHOLD = best["iou_threshold"]
         MAX_AGE = best["max_age"]
-        print(f"\nUsing best parameters: IoU={IOU_THRESHOLD:.3f}, MaxAge={MAX_AGE}")
+        print(f"\nUsing best parameters: IoU={IOU_THRESHOLD:.4f}, MaxAge={MAX_AGE}")
 
     print("\n=== Step 2: Running Maximum Overlap Tracker ===")
     tracked_detections, metrics = run_tracking_experiment(
