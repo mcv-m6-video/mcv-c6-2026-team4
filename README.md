@@ -10,3 +10,5 @@
 ## Weeks
 
 - [Week 1](traffic_monitoring/week1/)
+- [Week 2](traffic_monitoring/week2/)
+    - [README](traffic_monitoring/week2/README.md)
