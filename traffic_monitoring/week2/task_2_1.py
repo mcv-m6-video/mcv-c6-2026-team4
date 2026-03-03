@@ -417,7 +417,7 @@ def run_detector(
     device: str = "cuda"
 ) -> Dict[int, List[BoundingBox]]:
     if vehicle_class_ids is None:
-        vehicle_class_ids = [0]  # YOLOv10: car=0
+        vehicle_class_ids = [2, 5, 7]  # COCO: car=2, bus=5, truck=7
 
     print(f"Loading model: {model_name} on {device}...")
     model = YOLO(model_name)
@@ -699,7 +699,7 @@ def main():
 
     MODEL_NAME = "yolov10s.pt"
     CONF_THRESHOLD = 0.5
-    VEHICLE_CLASS_IDS = [0]  # YOLOv10: car=0
+    VEHICLE_CLASS_IDS = [2, 5, 7]  # COCO: car=2, bus=5, truck=7
     IOU_THRESHOLD = 0.3
     MAX_AGE = 5
 
