@@ -409,15 +409,24 @@ def print_metrics(metrics: Dict[str, float]):
 
 def run_detector(
     video_path: str,
-    model_name: str = "yolov8n.pt",
+    model_name: str = "yolov10s.pt",
     conf_threshold: float = 0.5,
-    car_class_id: int = 2,
+    vehicle_class_ids: List[int] = None,
     start_frac: float = 0.0,
     end_frac: float = 1.0,
     device: str = "cuda"
 ) -> Dict[int, List[BoundingBox]]:
+    if vehicle_class_ids is None:
+        vehicle_class_ids = [0]  # YOLOv10: car=0
+
     print(f"Loading model: {model_name} on {device}...")
     model = YOLO(model_name)
+
+    print(f"Model class names: {model.names}")
+    print(f"Filtering for class IDs: {vehicle_class_ids}")
+    for cid in vehicle_class_ids:
+        if cid in model.names:
+            print(f"  Class {cid}: {model.names[cid]}")
 
     print(f"Loading video: {video_path}...")
     video_source = VideoPartSource(video_path, start_frac=start_frac, end_frac=end_frac)
@@ -425,6 +434,7 @@ def run_detector(
     print("Running inference...")
     pred_per_frame = {}
     current_frame_id = video_source.start_frame
+    class_counts = defaultdict(int)
 
     for frame in tqdm(video_source, total=len(video_source)):
         results = model.predict(frame, verbose=False, conf=conf_threshold, device=device)
@@ -435,7 +445,7 @@ def run_detector(
             for box in boxes:
                 cls_id = int(box.cls[0])
 
-                if cls_id == car_class_id:
+                if cls_id in vehicle_class_ids:
                     x1, y1, x2, y2 = box.xyxy[0].tolist()
                     conf = float(box.conf[0])
 
@@ -447,11 +457,17 @@ def run_detector(
                         confidence=conf
                     )
                     frame_detections.append(detection)
+                    class_counts[cls_id] += 1
 
         if frame_detections:
             pred_per_frame[current_frame_id] = frame_detections
 
         current_frame_id += 1
+
+    print(f"\nDetection counts by class:")
+    for cid, count in sorted(class_counts.items()):
+        class_name = model.names.get(cid, f"unknown_{cid}")
+        print(f"  {class_name} (id={cid}): {count}")
 
     return pred_per_frame
 
@@ -681,8 +697,9 @@ def main():
     VIDEO_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
     XML_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
 
-    MODEL_NAME = "yolov8n.pt"
+    MODEL_NAME = "yolov10s.pt"
     CONF_THRESHOLD = 0.5
+    VEHICLE_CLASS_IDS = [0]  # YOLOv10: car=0
     IOU_THRESHOLD = 0.3
     MAX_AGE = 5
 
@@ -707,7 +724,7 @@ def main():
     _, gt_with_tracks = load_annotations_with_tracks(XML_PATH)
 
     print("\n=== Step 1: Running Object Detection ===")
-    pred_per_frame = run_detector(VIDEO_PATH, MODEL_NAME, CONF_THRESHOLD)
+    pred_per_frame = run_detector(VIDEO_PATH, MODEL_NAME, CONF_THRESHOLD, VEHICLE_CLASS_IDS)
     print(f"Detected objects in {len(pred_per_frame)} frames")
 
     if DO_PARAM_SEARCH:
