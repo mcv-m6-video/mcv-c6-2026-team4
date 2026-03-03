@@ -1,0 +1,6 @@
+path: datasets/yolo_dataset_strategy_a
+train: train/images
+val: val/images
+
+names:
+  0: car

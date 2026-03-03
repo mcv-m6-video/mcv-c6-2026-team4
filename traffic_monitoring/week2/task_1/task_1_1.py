@@ -1,8 +1,9 @@
+import json
 import os
 import sys
 import xml.etree.ElementTree as ET
 from typing import Dict
-from ultralytics import YOLO
+from ultralytics import YOLO, RTDETR
 from tqdm import tqdm
 import cv2
 import numpy as np
@@ -22,18 +23,21 @@ def draw_bboxes(img, bboxes, color=(0, 255, 0)):
 
 def main():
     ############# CONFIGURATION #############
-    VIDEO_PATH = "/home/pau/Documentos/Universidad/Master/C6/mcv-c6-2026-team4/traffic_monitoring/data/AICity_data/train/S03/c010/vdo.avi" 
-    XML_PATH = "/home/pau/Documentos/Universidad/Master/C6/mcv-c6-2026-team4/traffic_monitoring/data/ai_challenge_s03_c010-full_annotation.xml"
-    MODEL_NAME = "yolov8m.pt"
+    VIDEO_PATH = "../../data/AICity_data/train/S03/c010/vdo.avi" 
+    XML_PATH = "../../data/ai_challenge_s03_c010-full_annotation.xml"
+    YOLO_MODEL_NAME = "best_rand.pt"
+    DETR_MODEL_NAME = "rtdetr-l.pt"
     OUTPUT_DET_PATH = "yolo_detections.avi"
     OUTPUT_SIDE_BY_SIDE = "yolo_side_by_side.avi"
     CONF_THRESHOLD = 0.5
-    CAR_CLASS_ID = 2  # COCO Car ID
-    SAVE_VIDEOS = False
+    CAR_CLASS_ID = 0  # COCO Car ID
+    SAVE_VIDEOS = True
+    USE_YOLO = True
+    RESULTS_FILE = f"task_1_1_results_{YOLO_MODEL_NAME if USE_YOLO == True else DETR_MODEL_NAME}.json"
     #########################################
 
-    print(f"Loading model: {MODEL_NAME}")
-    model = YOLO(MODEL_NAME)
+    print(f"Loading model: {YOLO_MODEL_NAME if USE_YOLO == True else DETR_MODEL_NAME}")
+    model = YOLO(YOLO_MODEL_NAME) if USE_YOLO == True else RTDETR(DETR_MODEL_NAME)
 
     video_source = VideoPartSource(VIDEO_PATH, start_frac=0.0, end_frac=1.0)
     fps = video_source.fps
@@ -103,6 +107,15 @@ def main():
 
     # Evaluation
     metrics = evaluate_detections(gt_per_frame, pred_per_frame)
+    # Prepare the data dictionary
+    results_to_save = {
+        "model": YOLO_MODEL_NAME if USE_YOLO == True else DETR_MODEL_NAME,
+        "metrics": metrics
+    }
+    # Save results to JSON
+    with open(RESULTS_FILE, "w") as f:
+        json.dump(results_to_save, f, indent=4)
+
     show_metrics(metrics)
 
 if __name__ == "__main__":

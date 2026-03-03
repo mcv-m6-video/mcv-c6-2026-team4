@@ -4,3 +4,5 @@ AICity_data
 *.xml
 *.zip
 *.csv
+*.json
+*.pt

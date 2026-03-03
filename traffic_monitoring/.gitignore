@@ -1,3 +1,9 @@
 AICity_data
 ai_challenge_s03_c010-full_annotation.xml
 data
+results*/
+*dataset*/
+job_mhigh
+logs
+runs
+debug*
