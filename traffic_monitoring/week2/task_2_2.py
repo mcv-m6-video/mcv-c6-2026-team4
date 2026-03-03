@@ -26,8 +26,6 @@ from task_2_1 import (
 )
 
 
-# ─── Kalman Filter single-object tracker ──────────────────────────────────────
-
 class KalmanBoxTracker:
     """
     Tracks a single object using a Kalman filter with constant-velocity motion.
@@ -39,52 +37,36 @@ class KalmanBoxTracker:
     def __init__(self, bbox: BoundingBox, track_id: int):
         self.id = track_id
 
-        # ── State transition (constant velocity) ──────────────────────────────
-        # u  = u  + u'
-        # v  = v  + v'
-        # s  = s  + s'
-        # r  = r            (constant aspect ratio)
-        # u' = u', v' = v', s' = s'
         self.F = np.eye(7, dtype=float)
-        self.F[0, 4] = 1.0   # u  += u'
-        self.F[1, 5] = 1.0   # v  += v'
-        self.F[2, 6] = 1.0   # s  += s'
+        self.F[0, 4] = 1.0
+        self.F[1, 5] = 1.0
+        self.F[2, 6] = 1.0
 
-        # ── Measurement matrix ────────────────────────────────────────────────
-        # z = H @ x  =>  observe the first 4 state variables
         self.H = np.zeros((4, 7), dtype=float)
         self.H[0, 0] = 1.0
         self.H[1, 1] = 1.0
         self.H[2, 2] = 1.0
         self.H[3, 3] = 1.0
 
-        # ── Error covariance (SORT defaults) ──────────────────────────────────
         self.P = np.eye(7, dtype=float)
-        self.P[4:, 4:] *= 1000.0   # high uncertainty for latent velocities
+        self.P[4:, 4:] *= 1000.0
         self.P *= 10.0
 
-        # ── Process noise ─────────────────────────────────────────────────────
         self.Q = np.eye(7, dtype=float)
         self.Q[4:, 4:] *= 0.01
         self.Q[6, 6]   *= 0.01
 
-        # ── Measurement noise ─────────────────────────────────────────────────
         self.R = np.eye(4, dtype=float)
         self.R[2:, 2:] *= 10.0
 
-        # ── Initialise state from first detection ─────────────────────────────
         self.x = self._bbox_to_z(bbox)
 
-        # ── Bookkeeping ───────────────────────────────────────────────────────
         self.time_since_update = 0
         self.hit_streak = 0
         self.age = 0
 
-    # ── Conversion helpers ────────────────────────────────────────────────────
-
     @staticmethod
     def _bbox_to_z(bbox: BoundingBox) -> np.ndarray:
-        """BoundingBox → Kalman measurement / initial state (7 x 1)."""
         w = bbox.right  - bbox.left
         h = bbox.bottom - bbox.top
         u = bbox.left + w / 2.0
@@ -94,7 +76,6 @@ class KalmanBoxTracker:
         return np.array([[u], [v], [s], [r], [0.0], [0.0], [0.0]])
 
     def _state_to_bbox(self) -> BoundingBox:
-        """Current Kalman state → BoundingBox."""
         u = float(self.x[0])
         v = float(self.x[1])
         s = max(float(self.x[2]), 1e-6)
@@ -109,15 +90,10 @@ class KalmanBoxTracker:
             confidence=None,
         )
 
-    # ── Kalman filter steps ───────────────────────────────────────────────────
-
     def predict(self) -> BoundingBox:
-        """Advance state one time step; return predicted bounding box."""
-        # Clip s+s' to prevent negative area
         if self.x[6] + self.x[2] <= 0:
             self.x[6] = 0.0
 
-        # Predict
         self.x = self.F @ self.x
         self.P = self.F @ self.P @ self.F.T + self.Q
 
@@ -129,7 +105,6 @@ class KalmanBoxTracker:
         return self._state_to_bbox()
 
     def update(self, bbox: BoundingBox):
-        """Update state with a new measurement."""
         z = np.array([
             [(bbox.left   + bbox.right)  / 2.0],
             [(bbox.top    + bbox.bottom) / 2.0],
@@ -137,9 +112,9 @@ class KalmanBoxTracker:
             [(bbox.right  - bbox.left) / max(bbox.bottom - bbox.top, 1e-6)],
         ])
 
-        y = z - self.H @ self.x                         # innovation
-        S = self.H @ self.P @ self.H.T + self.R         # innovation covariance
-        K = self.P @ self.H.T @ np.linalg.inv(S)        # Kalman gain
+        y = z - self.H @ self.x
+        S = self.H @ self.P @ self.H.T + self.R
+        K = self.P @ self.H.T @ np.linalg.inv(S)
 
         self.x = self.x + K @ y
         self.P = (np.eye(7) - K @ self.H) @ self.P
@@ -147,8 +122,6 @@ class KalmanBoxTracker:
         self.time_since_update = 0
         self.hit_streak += 1
 
-
-# ─── Multi-object Kalman Filter tracker ───────────────────────────────────────
 
 class KalmanFilterTracker:
     """
@@ -180,12 +153,9 @@ class KalmanFilterTracker:
         self.frame_count = 0
         self._next_id = 1
 
-    # ── Public API ─────────────────────────────────────────────────────────────
-
     def update(self, frame_id: int, detections: List[BoundingBox]) -> List[Detection]:
         self.frame_count += 1
 
-        # 1. Predict next position for every active tracker
         predicted: List[BoundingBox] = []
         valid_trackers: List[KalmanBoxTracker] = []
         for trk in self.kalman_trackers:
@@ -195,10 +165,8 @@ class KalmanFilterTracker:
                 valid_trackers.append(trk)
         self.kalman_trackers = valid_trackers
 
-        # 2. Match detections to predictions (Hungarian algorithm on IoU)
         matched_trk, matched_det, unmatched_dets = self._match(predicted, detections)
 
-        # 3. Update matched trackers
         result: List[Detection] = []
         for trk_idx, det_idx in zip(matched_trk, matched_det):
             trk = self.kalman_trackers[trk_idx]
@@ -209,12 +177,10 @@ class KalmanFilterTracker:
                 bbox=detections[det_idx],
                 track_id=trk.id,
             )
-            # Always record for offline evaluation; min_hits only gates real-time output
             self._record(trk.id, det, frame_id)
             if trk.hit_streak >= self.min_hits or self.frame_count <= self.min_hits:
                 result.append(det)
 
-        # 4. Initialise new trackers for unmatched detections
         for det_idx in unmatched_dets:
             trk = KalmanBoxTracker(detections[det_idx], track_id=self._next_id)
             self._next_id += 1
@@ -228,7 +194,6 @@ class KalmanFilterTracker:
             self._record(trk.id, det, frame_id)
             result.append(det)
 
-        # 5. Prune dead trackers
         self.kalman_trackers = [
             trk for trk in self.kalman_trackers
             if trk.time_since_update <= self.max_age
@@ -242,8 +207,6 @@ class KalmanFilterTracker:
             all_dets.extend(track.detections)
         return all_dets
 
-    # ── Private helpers ────────────────────────────────────────────────────────
-
     def _record(self, track_id: int, det: Detection, frame_id: int):
         if track_id not in self.tracks:
             self.tracks[track_id] = Track(track_id=track_id)
@@ -255,7 +218,6 @@ class KalmanFilterTracker:
         predicted: List[BoundingBox],
         detections: List[BoundingBox],
     ) -> Tuple[List[int], List[int], List[int]]:
-        """Return (matched_trk_idx, matched_det_idx, unmatched_det_idx)."""
         if not predicted or not detections:
             return [], [], list(range(len(detections)))
 
@@ -273,8 +235,6 @@ class KalmanFilterTracker:
 
         return matched_trk, matched_det, sorted(unmatched_dets)
 
-
-# ─── Experiment runner ────────────────────────────────────────────────────────
 
 def run_kalman_experiment(
     pred_per_frame: Dict[int, List[BoundingBox]],
@@ -295,8 +255,6 @@ def run_kalman_experiment(
     metrics = compute_trackeval_metrics(gt_with_tracks, tracked)
     return tracked, metrics
 
-
-# ─── Optuna search ────────────────────────────────────────────────────────────
 
 def optuna_parameter_search(
     pred_per_frame: Dict[int, List[BoundingBox]],
@@ -323,7 +281,6 @@ def optuna_parameter_search(
             trial.set_user_attr(k, v)
         return metrics[metric]
 
-    # Delete stale DB if all completed trials have 0 value (broken run)
     if os.path.exists(db_path):
         try:
             _check_study = optuna.load_study(
@@ -358,7 +315,6 @@ def optuna_parameter_search(
     print(f"  max_age       = {best['max_age']}")
     print(f"  min_hits      = {best['min_hits']}")
 
-    # Save visualisation plots
     plots_dir = os.path.join(output_dir, "optuna_plots")
     os.makedirs(plots_dir, exist_ok=True)
     for name, fn in [
@@ -380,7 +336,6 @@ def optuna_parameter_search(
     except Exception as e:
         print(f"  Contour plot skipped: {e}")
 
-    # Persist results
     summary = {
         "best_params": best,
         "best_value":  study.best_value,
@@ -405,12 +360,10 @@ def optuna_parameter_search(
             "best_metrics": best_metrics, "study": study}
 
 
-# ─── Entry point ──────────────────────────────────────────────────────────────
-
 def main():
-    VIDEO_PATH = "/home/priubrogent/01_MCV/C6/00_PROJECT/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
-    XML_PATH   = "/home/priubrogent/01_MCV/C6/00_PROJECT/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
-    OUTPUT_DIR = "/home/priubrogent/01_MCV/C6/00_PROJECT/traffic_monitoring/week2/results/task_2_2"
+    VIDEO_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
+    XML_PATH   = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
+    OUTPUT_DIR = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_2"
 
     MODEL_NAME     = "yolov10s.pt"
     CONF_THRESHOLD = 0.5
@@ -431,7 +384,6 @@ def main():
 
     _, gt_with_tracks = load_annotations_with_tracks(XML_PATH)
 
-    # ── Step 1: Detection ──────────────────────────────────────────────────────
     print("\n=== Step 1: Running Object Detection ===")
     pred_per_frame = run_detector(VIDEO_PATH, MODEL_NAME, CONF_THRESHOLD)
     total_dets = sum(len(v) for v in pred_per_frame.values())
