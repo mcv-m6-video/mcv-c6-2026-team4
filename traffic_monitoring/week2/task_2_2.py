@@ -76,10 +76,10 @@ class KalmanBoxTracker:
         return np.array([[u], [v], [s], [r], [0.0], [0.0], [0.0]])
 
     def _state_to_bbox(self) -> BoundingBox:
-        u = float(self.x[0])
-        v = float(self.x[1])
-        s = max(float(self.x[2]), 1e-6)
-        r = max(float(self.x[3]), 1e-6)
+        u = float(self.x[0, 0])
+        v = float(self.x[1, 0])
+        s = max(float(self.x[2, 0]), 1e-6)
+        r = max(float(self.x[3, 0]), 1e-6)
         w = float(np.sqrt(s * r))
         h = s / w
         return BoundingBox(
@@ -91,8 +91,8 @@ class KalmanBoxTracker:
         )
 
     def predict(self) -> BoundingBox:
-        if self.x[6] + self.x[2] <= 0:
-            self.x[6] = 0.0
+        if self.x[6, 0] + self.x[2, 0] <= 0:
+            self.x[6, 0] = 0.0
 
         self.x = self.F @ self.x
         self.P = self.F @ self.P @ self.F.T + self.Q
