@@ -412,7 +412,7 @@ def main():
     XML_PATH   = "/home/priubrogent/01_MCV/C6/00_PROJECT/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
     OUTPUT_DIR = "/home/priubrogent/01_MCV/C6/00_PROJECT/traffic_monitoring/week2/results/task_2_2"
 
-    MODEL_NAME     = "yolov8s.pt"
+    MODEL_NAME     = "yolov10s.pt"
     CONF_THRESHOLD = 0.5
     IOU_THRESHOLD  = 0.3
     MAX_AGE        = 5
