@@ -34,7 +34,15 @@ class KalmanBoxTracker:
     Measurement : z = [u, v, s, r]^T           (4 x 1)
     """
 
-    def __init__(self, bbox: BoundingBox, track_id: int):
+    def __init__(
+        self,
+        bbox: BoundingBox,
+        track_id: int,
+        q_velocity: float = 0.01,
+        q_scale_velocity: float = 0.0001,
+        r_position: float = 1.0,
+        r_scale: float = 10.0,
+    ):
         self.id = track_id
 
         self.F = np.eye(7, dtype=float)
@@ -52,12 +60,22 @@ class KalmanBoxTracker:
         self.P[4:, 4:] *= 1000.0
         self.P *= 10.0
 
+        # Process noise (Q): uncertainty in motion model
+        # q_velocity: noise for velocity components (u', v')
+        # q_scale_velocity: noise for scale velocity (s')
         self.Q = np.eye(7, dtype=float)
-        self.Q[4:, 4:] *= 0.01
-        self.Q[6, 6]   *= 0.01
+        self.Q[4, 4] = q_velocity      # u' velocity
+        self.Q[5, 5] = q_velocity      # v' velocity
+        self.Q[6, 6] = q_scale_velocity  # s' scale velocity
 
+        # Measurement noise (R): uncertainty in detections
+        # r_position: noise for position measurements (u, v)
+        # r_scale: noise for scale/aspect ratio (s, r)
         self.R = np.eye(4, dtype=float)
-        self.R[2:, 2:] *= 10.0
+        self.R[0, 0] = r_position  # u
+        self.R[1, 1] = r_position  # v
+        self.R[2, 2] = r_scale     # s
+        self.R[3, 3] = r_scale     # r
 
         self.x = self._bbox_to_z(bbox)
 
@@ -135,6 +153,14 @@ class KalmanFilterTracker:
         Frames a track survives without any matched detection.
     min_hits : int
         Consecutive hits required before a new track is reported.
+    q_velocity : float
+        Process noise for velocity components (u', v').
+    q_scale_velocity : float
+        Process noise for scale velocity (s').
+    r_position : float
+        Measurement noise for position (u, v).
+    r_scale : float
+        Measurement noise for scale/aspect ratio (s, r).
     """
 
     def __init__(
@@ -142,14 +168,25 @@ class KalmanFilterTracker:
         iou_threshold: float = 0.3,
         max_age: int = 5,
         min_hits: int = 1,
+        q_velocity: float = 0.01,
+        q_scale_velocity: float = 0.0001,
+        r_position: float = 1.0,
+        r_scale: float = 10.0,
     ):
         self.iou_threshold = iou_threshold
         self.max_age = max_age
         self.min_hits = min_hits
 
+        # Kalman filter noise parameters
+        self.q_velocity = q_velocity
+        self.q_scale_velocity = q_scale_velocity
+        self.r_position = r_position
+        self.r_scale = r_scale
+
         self.kalman_trackers: List[KalmanBoxTracker] = []
         self.tracks: Dict[int, Track] = {}
         self.track_last_seen: Dict[int, int] = {}
+        self.track_hit_counts: Dict[int, int] = {}  # Track max hit_streak per track
         self.frame_count = 0
         self._next_id = 1
 
@@ -172,6 +209,11 @@ class KalmanFilterTracker:
             trk = self.kalman_trackers[trk_idx]
             trk.update(detections[det_idx])
 
+            # Track max hit streak for this track
+            self.track_hit_counts[trk.id] = max(
+                self.track_hit_counts.get(trk.id, 0), trk.hit_streak
+            )
+
             det = Detection(
                 frame_id=frame_id,
                 bbox=detections[det_idx],
@@ -182,9 +224,17 @@ class KalmanFilterTracker:
                 result.append(det)
 
         for det_idx in unmatched_dets:
-            trk = KalmanBoxTracker(detections[det_idx], track_id=self._next_id)
+            trk = KalmanBoxTracker(
+                detections[det_idx],
+                track_id=self._next_id,
+                q_velocity=self.q_velocity,
+                q_scale_velocity=self.q_scale_velocity,
+                r_position=self.r_position,
+                r_scale=self.r_scale,
+            )
             self._next_id += 1
             self.kalman_trackers.append(trk)
+            self.track_hit_counts[trk.id] = 1  # New track has 1 hit
 
             det = Detection(
                 frame_id=frame_id,
@@ -202,9 +252,12 @@ class KalmanFilterTracker:
         return result
 
     def get_all_detections(self) -> List[Detection]:
+        """Return all detections from tracks that reached min_hits threshold."""
         all_dets = []
-        for track in self.tracks.values():
-            all_dets.extend(track.detections)
+        for track_id, track in self.tracks.items():
+            # Only include detections from tracks that reached min_hits
+            if self.track_hit_counts.get(track_id, 0) >= self.min_hits:
+                all_dets.extend(track.detections)
         return all_dets
 
     def _record(self, track_id: int, det: Detection, frame_id: int):
@@ -242,11 +295,19 @@ def run_kalman_experiment(
     iou_threshold: float = 0.3,
     max_age: int = 5,
     min_hits: int = 1,
+    q_velocity: float = 0.01,
+    q_scale_velocity: float = 0.0001,
+    r_position: float = 1.0,
+    r_scale: float = 10.0,
 ) -> Tuple[List[Detection], Dict[str, float]]:
     tracker = KalmanFilterTracker(
         iou_threshold=iou_threshold,
         max_age=max_age,
         min_hits=min_hits,
+        q_velocity=q_velocity,
+        q_scale_velocity=q_scale_velocity,
+        r_position=r_position,
+        r_scale=r_scale,
     )
     for frame_id in sorted(pred_per_frame.keys()):
         tracker.update(frame_id, pred_per_frame[frame_id])
@@ -271,11 +332,21 @@ def optuna_parameter_search(
         max_age       = trial.suggest_int("max_age", 1, 50)
         min_hits      = trial.suggest_int("min_hits", 1, 5)
 
+        # Kalman filter noise parameters
+        q_velocity       = trial.suggest_float("q_velocity", 0.001, 1.0, log=True)
+        q_scale_velocity = trial.suggest_float("q_scale_velocity", 0.00001, 0.1, log=True)
+        r_position       = trial.suggest_float("r_position", 0.1, 10.0, log=True)
+        r_scale          = trial.suggest_float("r_scale", 1.0, 100.0, log=True)
+
         _, metrics = run_kalman_experiment(
             pred_per_frame, gt_with_tracks,
             iou_threshold=iou_threshold,
             max_age=max_age,
             min_hits=min_hits,
+            q_velocity=q_velocity,
+            q_scale_velocity=q_scale_velocity,
+            r_position=r_position,
+            r_scale=r_scale,
         )
         for k, v in metrics.items():
             trial.set_user_attr(k, v)
@@ -311,9 +382,13 @@ def optuna_parameter_search(
 
     best = study.best_params
     print(f"\nBest {metric}: {study.best_value:.4f}")
-    print(f"  iou_threshold = {best['iou_threshold']:.4f}")
-    print(f"  max_age       = {best['max_age']}")
-    print(f"  min_hits      = {best['min_hits']}")
+    print(f"  iou_threshold    = {best['iou_threshold']:.4f}")
+    print(f"  max_age          = {best['max_age']}")
+    print(f"  min_hits         = {best['min_hits']}")
+    print(f"  q_velocity       = {best['q_velocity']:.6f}")
+    print(f"  q_scale_velocity = {best['q_scale_velocity']:.6f}")
+    print(f"  r_position       = {best['r_position']:.4f}")
+    print(f"  r_scale          = {best['r_scale']:.4f}")
 
     plots_dir = os.path.join(output_dir, "optuna_plots")
     os.makedirs(plots_dir, exist_ok=True)
@@ -355,6 +430,10 @@ def optuna_parameter_search(
         iou_threshold=best["iou_threshold"],
         max_age=best["max_age"],
         min_hits=best["min_hits"],
+        q_velocity=best["q_velocity"],
+        q_scale_velocity=best["q_scale_velocity"],
+        r_position=best["r_position"],
+        r_scale=best["r_scale"],
     )
     return {"best_params": best, "best_value": study.best_value,
             "best_metrics": best_metrics, "study": study}
@@ -370,6 +449,12 @@ def main():
     IOU_THRESHOLD  = 0.3
     MAX_AGE        = 5
     MIN_HITS       = 1
+
+    # Kalman filter noise defaults
+    Q_VELOCITY       = 0.01
+    Q_SCALE_VELOCITY = 0.0001
+    R_POSITION       = 1.0
+    R_SCALE          = 10.0
 
     DO_PARAM_SEARCH = True
     CREATE_VIS      = True
@@ -416,11 +501,17 @@ def main():
             metric="HOTA",
         )
         best = search["best_params"]
-        IOU_THRESHOLD = best["iou_threshold"]
-        MAX_AGE       = best["max_age"]
-        MIN_HITS      = best["min_hits"]
+        IOU_THRESHOLD    = best["iou_threshold"]
+        MAX_AGE          = best["max_age"]
+        MIN_HITS         = best["min_hits"]
+        Q_VELOCITY       = best["q_velocity"]
+        Q_SCALE_VELOCITY = best["q_scale_velocity"]
+        R_POSITION       = best["r_position"]
+        R_SCALE          = best["r_scale"]
         print(f"\nUsing best params: IoU={IOU_THRESHOLD:.4f}, "
-              f"MaxAge={MAX_AGE}, MinHits={MIN_HITS}")
+              f"MaxAge={MAX_AGE}, MinHits={MIN_HITS}, "
+              f"Q_vel={Q_VELOCITY:.4f}, Q_scale={Q_SCALE_VELOCITY:.6f}, "
+              f"R_pos={R_POSITION:.4f}, R_scale={R_SCALE:.4f}")
 
     # ── Step 3: Final tracking run ─────────────────────────────────────────────
     print("\n=== Step 2: Running Kalman Filter Tracker ===")
@@ -429,6 +520,10 @@ def main():
         iou_threshold=IOU_THRESHOLD,
         max_age=MAX_AGE,
         min_hits=MIN_HITS,
+        q_velocity=Q_VELOCITY,
+        q_scale_velocity=Q_SCALE_VELOCITY,
+        r_position=R_POSITION,
+        r_scale=R_SCALE,
     )
     n_tracks = len(set(d.track_id for d in tracked_detections))
     print(f"Tracks: {n_tracks}  |  Detections: {len(tracked_detections)}")
