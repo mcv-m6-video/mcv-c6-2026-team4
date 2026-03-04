@@ -12,7 +12,9 @@ from task_2_1 import (
 from task_2_2 import run_kalman_experiment
 
 
-def iou_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_max_age=50, fixed_min_hits=1, n_values=50):
+def iou_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_max_age=50, fixed_min_hits=1,
+              fixed_q_velocity=0.01, fixed_q_scale_velocity=0.0001,
+              fixed_r_position=1.0, fixed_r_scale=10.0, n_values=50):
     iou_values = np.linspace(0.01, 1.0, n_values)
     results = []
 
@@ -22,7 +24,11 @@ def iou_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_max_age=50, fixe
             pred_per_frame, gt_with_tracks,
             iou_threshold=iou_thr,
             max_age=fixed_max_age,
-            min_hits=fixed_min_hits
+            min_hits=fixed_min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=fixed_r_position,
+            r_scale=fixed_r_scale,
         )
         results.append({
             "iou_threshold": float(iou_thr),
@@ -39,7 +45,9 @@ def iou_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_max_age=50, fixe
     return results
 
 
-def max_age_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fixed_min_hits=1, n_values=100):
+def max_age_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fixed_min_hits=1,
+                  fixed_q_velocity=0.01, fixed_q_scale_velocity=0.0001,
+                  fixed_r_position=1.0, fixed_r_scale=10.0, n_values=100):
     max_age_values = list(range(1, n_values + 1))
     results = []
 
@@ -49,7 +57,11 @@ def max_age_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fix
             pred_per_frame, gt_with_tracks,
             iou_threshold=fixed_iou,
             max_age=max_age,
-            min_hits=fixed_min_hits
+            min_hits=fixed_min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=fixed_r_position,
+            r_scale=fixed_r_scale,
         )
         results.append({
             "iou_threshold": fixed_iou,
@@ -66,7 +78,9 @@ def max_age_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fix
     return results
 
 
-def min_hits_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fixed_max_age=50, n_values=10):
+def min_hits_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fixed_max_age=50,
+                   fixed_q_velocity=0.01, fixed_q_scale_velocity=0.0001,
+                   fixed_r_position=1.0, fixed_r_scale=10.0, n_values=10):
     min_hits_values = list(range(1, n_values + 1))
     results = []
 
@@ -76,7 +90,11 @@ def min_hits_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fi
             pred_per_frame, gt_with_tracks,
             iou_threshold=fixed_iou,
             max_age=fixed_max_age,
-            min_hits=min_hits
+            min_hits=min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=fixed_r_position,
+            r_scale=fixed_r_scale,
         )
         results.append({
             "iou_threshold": fixed_iou,
@@ -93,7 +111,137 @@ def min_hits_sweep(pred_per_frame, gt_with_tracks, output_dir, fixed_iou=0.1, fi
     return results
 
 
-def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits):
+def q_velocity_sweep(pred_per_frame, gt_with_tracks, output_dir,
+                     fixed_iou=0.1, fixed_max_age=50, fixed_min_hits=1,
+                     fixed_q_scale_velocity=0.0001, fixed_r_position=1.0, fixed_r_scale=10.0,
+                     n_values=50):
+    q_velocity_values = np.logspace(-3, 0, n_values)  # 0.001 to 1.0
+    results = []
+
+    print(f"\n=== Q Velocity Sweep (process noise for velocity) ===")
+    for q_vel in tqdm(q_velocity_values, desc="Q velocity sweep"):
+        _, metrics = run_kalman_experiment(
+            pred_per_frame, gt_with_tracks,
+            iou_threshold=fixed_iou,
+            max_age=fixed_max_age,
+            min_hits=fixed_min_hits,
+            q_velocity=q_vel,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=fixed_r_position,
+            r_scale=fixed_r_scale,
+        )
+        results.append({
+            "q_velocity": float(q_vel),
+            **metrics
+        })
+
+    output_path = os.path.join(output_dir, "q_velocity_sweep_results.json")
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved: {output_path}")
+
+    return results
+
+
+def q_scale_velocity_sweep(pred_per_frame, gt_with_tracks, output_dir,
+                           fixed_iou=0.1, fixed_max_age=50, fixed_min_hits=1,
+                           fixed_q_velocity=0.01, fixed_r_position=1.0, fixed_r_scale=10.0,
+                           n_values=50):
+    q_scale_values = np.logspace(-5, -1, n_values)  # 0.00001 to 0.1
+    results = []
+
+    print(f"\n=== Q Scale Velocity Sweep (process noise for scale velocity) ===")
+    for q_scale in tqdm(q_scale_values, desc="Q scale velocity sweep"):
+        _, metrics = run_kalman_experiment(
+            pred_per_frame, gt_with_tracks,
+            iou_threshold=fixed_iou,
+            max_age=fixed_max_age,
+            min_hits=fixed_min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=q_scale,
+            r_position=fixed_r_position,
+            r_scale=fixed_r_scale,
+        )
+        results.append({
+            "q_scale_velocity": float(q_scale),
+            **metrics
+        })
+
+    output_path = os.path.join(output_dir, "q_scale_velocity_sweep_results.json")
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved: {output_path}")
+
+    return results
+
+
+def r_position_sweep(pred_per_frame, gt_with_tracks, output_dir,
+                     fixed_iou=0.1, fixed_max_age=50, fixed_min_hits=1,
+                     fixed_q_velocity=0.01, fixed_q_scale_velocity=0.0001, fixed_r_scale=10.0,
+                     n_values=50):
+    r_position_values = np.logspace(-1, 1, n_values)  # 0.1 to 10.0
+    results = []
+
+    print(f"\n=== R Position Sweep (measurement noise for position) ===")
+    for r_pos in tqdm(r_position_values, desc="R position sweep"):
+        _, metrics = run_kalman_experiment(
+            pred_per_frame, gt_with_tracks,
+            iou_threshold=fixed_iou,
+            max_age=fixed_max_age,
+            min_hits=fixed_min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=r_pos,
+            r_scale=fixed_r_scale,
+        )
+        results.append({
+            "r_position": float(r_pos),
+            **metrics
+        })
+
+    output_path = os.path.join(output_dir, "r_position_sweep_results.json")
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved: {output_path}")
+
+    return results
+
+
+def r_scale_sweep(pred_per_frame, gt_with_tracks, output_dir,
+                  fixed_iou=0.1, fixed_max_age=50, fixed_min_hits=1,
+                  fixed_q_velocity=0.01, fixed_q_scale_velocity=0.0001, fixed_r_position=1.0,
+                  n_values=50):
+    r_scale_values = np.logspace(0, 2, n_values)  # 1.0 to 100.0
+    results = []
+
+    print(f"\n=== R Scale Sweep (measurement noise for scale/aspect ratio) ===")
+    for r_scl in tqdm(r_scale_values, desc="R scale sweep"):
+        _, metrics = run_kalman_experiment(
+            pred_per_frame, gt_with_tracks,
+            iou_threshold=fixed_iou,
+            max_age=fixed_max_age,
+            min_hits=fixed_min_hits,
+            q_velocity=fixed_q_velocity,
+            q_scale_velocity=fixed_q_scale_velocity,
+            r_position=fixed_r_position,
+            r_scale=r_scl,
+        )
+        results.append({
+            "r_scale": float(r_scl),
+            **metrics
+        })
+
+    output_path = os.path.join(output_dir, "r_scale_sweep_results.json")
+    with open(output_path, "w") as f:
+        json.dump(results, f, indent=2)
+    print(f"Saved: {output_path}")
+
+    return results
+
+
+def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
+                   optimal_q_velocity=0.01, optimal_q_scale_velocity=0.0001,
+                   optimal_r_position=1.0, optimal_r_scale=10.0):
     print("\n=== Generating Plots ===")
 
     with open(os.path.join(output_dir, "iou_sweep_results.json")) as f:
@@ -105,9 +253,25 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits):
     with open(os.path.join(output_dir, "min_hits_sweep_results.json")) as f:
         min_hits_results = json.load(f)
 
+    with open(os.path.join(output_dir, "q_velocity_sweep_results.json")) as f:
+        q_velocity_results = json.load(f)
+
+    with open(os.path.join(output_dir, "q_scale_velocity_sweep_results.json")) as f:
+        q_scale_velocity_results = json.load(f)
+
+    with open(os.path.join(output_dir, "r_position_sweep_results.json")) as f:
+        r_position_results = json.load(f)
+
+    with open(os.path.join(output_dir, "r_scale_sweep_results.json")) as f:
+        r_scale_results = json.load(f)
+
     iou_values = [r["iou_threshold"] for r in iou_results]
     max_age_values = [r["max_age"] for r in max_age_results]
     min_hits_values = [r["min_hits"] for r in min_hits_results]
+    q_velocity_values = [r["q_velocity"] for r in q_velocity_results]
+    q_scale_velocity_values = [r["q_scale_velocity"] for r in q_scale_velocity_results]
+    r_position_values = [r["r_position"] for r in r_position_results]
+    r_scale_values = [r["r_scale"] for r in r_scale_results]
 
     metrics = ["HOTA", "IDF1", "MOTA", "AssA", "DetA"]
 
@@ -295,6 +459,106 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits):
     print(f"Saved: all_sweeps_combined.png")
     plt.close()
 
+    # Kalman noise parameters - 4 panel plot
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+    # Q Velocity
+    for metric in metrics:
+        values = [r[metric] for r in q_velocity_results]
+        axes[0, 0].semilogx(q_velocity_values, values, label=metric, linewidth=2)
+    axes[0, 0].axvline(x=optimal_q_velocity, color='k', linestyle='--', linewidth=1.5, alpha=0.7)
+    axes[0, 0].set_xlabel("Q Velocity (log scale)", fontsize=12)
+    axes[0, 0].set_ylabel("Score", fontsize=12)
+    axes[0, 0].set_title("Metrics vs Q Velocity (process noise)", fontsize=14)
+    axes[0, 0].legend(loc="best", fontsize=8)
+    axes[0, 0].grid(True, alpha=0.3)
+    axes[0, 0].set_ylim(0, 1)
+
+    # Q Scale Velocity
+    for metric in metrics:
+        values = [r[metric] for r in q_scale_velocity_results]
+        axes[0, 1].semilogx(q_scale_velocity_values, values, label=metric, linewidth=2)
+    axes[0, 1].axvline(x=optimal_q_scale_velocity, color='k', linestyle='--', linewidth=1.5, alpha=0.7)
+    axes[0, 1].set_xlabel("Q Scale Velocity (log scale)", fontsize=12)
+    axes[0, 1].set_ylabel("Score", fontsize=12)
+    axes[0, 1].set_title("Metrics vs Q Scale Velocity", fontsize=14)
+    axes[0, 1].legend(loc="best", fontsize=8)
+    axes[0, 1].grid(True, alpha=0.3)
+    axes[0, 1].set_ylim(0, 1)
+
+    # R Position
+    for metric in metrics:
+        values = [r[metric] for r in r_position_results]
+        axes[1, 0].semilogx(r_position_values, values, label=metric, linewidth=2)
+    axes[1, 0].axvline(x=optimal_r_position, color='k', linestyle='--', linewidth=1.5, alpha=0.7)
+    axes[1, 0].set_xlabel("R Position (log scale)", fontsize=12)
+    axes[1, 0].set_ylabel("Score", fontsize=12)
+    axes[1, 0].set_title("Metrics vs R Position (measurement noise)", fontsize=14)
+    axes[1, 0].legend(loc="best", fontsize=8)
+    axes[1, 0].grid(True, alpha=0.3)
+    axes[1, 0].set_ylim(0, 1)
+
+    # R Scale
+    for metric in metrics:
+        values = [r[metric] for r in r_scale_results]
+        axes[1, 1].semilogx(r_scale_values, values, label=metric, linewidth=2)
+    axes[1, 1].axvline(x=optimal_r_scale, color='k', linestyle='--', linewidth=1.5, alpha=0.7)
+    axes[1, 1].set_xlabel("R Scale (log scale)", fontsize=12)
+    axes[1, 1].set_ylabel("Score", fontsize=12)
+    axes[1, 1].set_title("Metrics vs R Scale (measurement noise)", fontsize=14)
+    axes[1, 1].legend(loc="best", fontsize=8)
+    axes[1, 1].grid(True, alpha=0.3)
+    axes[1, 1].set_ylim(0, 1)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "kalman_noise_sweeps.png"), dpi=150)
+    print(f"Saved: kalman_noise_sweeps.png")
+    plt.close()
+
+    # HOTA only for Kalman noise parameters
+    fig, axes = plt.subplots(2, 2, figsize=(14, 10))
+
+    hota_q_vel = [r["HOTA"] for r in q_velocity_results]
+    axes[0, 0].semilogx(q_velocity_values, hota_q_vel, 'b-', linewidth=2.5)
+    axes[0, 0].axvline(x=optimal_q_velocity, color='r', linestyle='--', linewidth=1.5, label=f'Optimal ({optimal_q_velocity:.4f})')
+    axes[0, 0].set_xlabel("Q Velocity (log scale)", fontsize=12)
+    axes[0, 0].set_ylabel("HOTA", fontsize=12)
+    axes[0, 0].set_title("HOTA vs Q Velocity", fontsize=14)
+    axes[0, 0].legend()
+    axes[0, 0].grid(True, alpha=0.3)
+
+    hota_q_scale = [r["HOTA"] for r in q_scale_velocity_results]
+    axes[0, 1].semilogx(q_scale_velocity_values, hota_q_scale, 'b-', linewidth=2.5)
+    axes[0, 1].axvline(x=optimal_q_scale_velocity, color='r', linestyle='--', linewidth=1.5, label=f'Optimal ({optimal_q_scale_velocity:.6f})')
+    axes[0, 1].set_xlabel("Q Scale Velocity (log scale)", fontsize=12)
+    axes[0, 1].set_ylabel("HOTA", fontsize=12)
+    axes[0, 1].set_title("HOTA vs Q Scale Velocity", fontsize=14)
+    axes[0, 1].legend()
+    axes[0, 1].grid(True, alpha=0.3)
+
+    hota_r_pos = [r["HOTA"] for r in r_position_results]
+    axes[1, 0].semilogx(r_position_values, hota_r_pos, 'b-', linewidth=2.5)
+    axes[1, 0].axvline(x=optimal_r_position, color='r', linestyle='--', linewidth=1.5, label=f'Optimal ({optimal_r_position:.4f})')
+    axes[1, 0].set_xlabel("R Position (log scale)", fontsize=12)
+    axes[1, 0].set_ylabel("HOTA", fontsize=12)
+    axes[1, 0].set_title("HOTA vs R Position", fontsize=14)
+    axes[1, 0].legend()
+    axes[1, 0].grid(True, alpha=0.3)
+
+    hota_r_scale = [r["HOTA"] for r in r_scale_results]
+    axes[1, 1].semilogx(r_scale_values, hota_r_scale, 'b-', linewidth=2.5)
+    axes[1, 1].axvline(x=optimal_r_scale, color='r', linestyle='--', linewidth=1.5, label=f'Optimal ({optimal_r_scale:.4f})')
+    axes[1, 1].set_xlabel("R Scale (log scale)", fontsize=12)
+    axes[1, 1].set_ylabel("HOTA", fontsize=12)
+    axes[1, 1].set_title("HOTA vs R Scale", fontsize=14)
+    axes[1, 1].legend()
+    axes[1, 1].grid(True, alpha=0.3)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(output_dir, "kalman_noise_hota.png"), dpi=150)
+    print(f"Saved: kalman_noise_hota.png")
+    plt.close()
+
     print("\nAll plots generated!")
 
 
@@ -312,14 +576,26 @@ def main():
     if os.path.exists(optuna_path):
         with open(optuna_path) as f:
             optuna_results = json.load(f)
-        OPTIMAL_IOU = optuna_results["best_params"]["iou_threshold"]
-        OPTIMAL_MAX_AGE = optuna_results["best_params"]["max_age"]
-        OPTIMAL_MIN_HITS = optuna_results["best_params"]["min_hits"]
-        print(f"Loaded optimal params from Optuna: IoU={OPTIMAL_IOU:.4f}, max_age={OPTIMAL_MAX_AGE}, min_hits={OPTIMAL_MIN_HITS}")
+        best = optuna_results["best_params"]
+        OPTIMAL_IOU = best["iou_threshold"]
+        OPTIMAL_MAX_AGE = best["max_age"]
+        OPTIMAL_MIN_HITS = best["min_hits"]
+        OPTIMAL_Q_VELOCITY = best.get("q_velocity", 0.01)
+        OPTIMAL_Q_SCALE_VELOCITY = best.get("q_scale_velocity", 0.0001)
+        OPTIMAL_R_POSITION = best.get("r_position", 1.0)
+        OPTIMAL_R_SCALE = best.get("r_scale", 10.0)
+        print(f"Loaded optimal params from Optuna:")
+        print(f"  IoU={OPTIMAL_IOU:.4f}, max_age={OPTIMAL_MAX_AGE}, min_hits={OPTIMAL_MIN_HITS}")
+        print(f"  q_velocity={OPTIMAL_Q_VELOCITY:.6f}, q_scale_velocity={OPTIMAL_Q_SCALE_VELOCITY:.6f}")
+        print(f"  r_position={OPTIMAL_R_POSITION:.4f}, r_scale={OPTIMAL_R_SCALE:.4f}")
     else:
         OPTIMAL_IOU = 0.1
         OPTIMAL_MAX_AGE = 50
         OPTIMAL_MIN_HITS = 1
+        OPTIMAL_Q_VELOCITY = 0.01
+        OPTIMAL_Q_SCALE_VELOCITY = 0.0001
+        OPTIMAL_R_POSITION = 1.0
+        OPTIMAL_R_SCALE = 10.0
         print(f"Using default params: IoU={OPTIMAL_IOU}, max_age={OPTIMAL_MAX_AGE}, min_hits={OPTIMAL_MIN_HITS}")
 
     os.makedirs(OUTPUT_DIR, exist_ok=True)
@@ -347,6 +623,10 @@ def main():
         pred_per_frame, gt_with_tracks, OUTPUT_DIR,
         fixed_max_age=OPTIMAL_MAX_AGE,
         fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        fixed_r_scale=OPTIMAL_R_SCALE,
         n_values=50
     )
 
@@ -354,6 +634,10 @@ def main():
         pred_per_frame, gt_with_tracks, OUTPUT_DIR,
         fixed_iou=OPTIMAL_IOU,
         fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        fixed_r_scale=OPTIMAL_R_SCALE,
         n_values=100
     )
 
@@ -361,16 +645,73 @@ def main():
         pred_per_frame, gt_with_tracks, OUTPUT_DIR,
         fixed_iou=OPTIMAL_IOU,
         fixed_max_age=OPTIMAL_MAX_AGE,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        fixed_r_scale=OPTIMAL_R_SCALE,
         n_values=10
     )
 
+    # Kalman noise parameter sweeps
+    q_velocity_results = q_velocity_sweep(
+        pred_per_frame, gt_with_tracks, OUTPUT_DIR,
+        fixed_iou=OPTIMAL_IOU,
+        fixed_max_age=OPTIMAL_MAX_AGE,
+        fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        fixed_r_scale=OPTIMAL_R_SCALE,
+        n_values=50
+    )
+
+    q_scale_velocity_results = q_scale_velocity_sweep(
+        pred_per_frame, gt_with_tracks, OUTPUT_DIR,
+        fixed_iou=OPTIMAL_IOU,
+        fixed_max_age=OPTIMAL_MAX_AGE,
+        fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        fixed_r_scale=OPTIMAL_R_SCALE,
+        n_values=50
+    )
+
+    r_position_results = r_position_sweep(
+        pred_per_frame, gt_with_tracks, OUTPUT_DIR,
+        fixed_iou=OPTIMAL_IOU,
+        fixed_max_age=OPTIMAL_MAX_AGE,
+        fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_scale=OPTIMAL_R_SCALE,
+        n_values=50
+    )
+
+    r_scale_results = r_scale_sweep(
+        pred_per_frame, gt_with_tracks, OUTPUT_DIR,
+        fixed_iou=OPTIMAL_IOU,
+        fixed_max_age=OPTIMAL_MAX_AGE,
+        fixed_min_hits=OPTIMAL_MIN_HITS,
+        fixed_q_velocity=OPTIMAL_Q_VELOCITY,
+        fixed_q_scale_velocity=OPTIMAL_Q_SCALE_VELOCITY,
+        fixed_r_position=OPTIMAL_R_POSITION,
+        n_values=50
+    )
+
     # Generate plots
-    generate_plots(OUTPUT_DIR, OPTIMAL_IOU, OPTIMAL_MAX_AGE, OPTIMAL_MIN_HITS)
+    generate_plots(
+        OUTPUT_DIR, OPTIMAL_IOU, OPTIMAL_MAX_AGE, OPTIMAL_MIN_HITS,
+        OPTIMAL_Q_VELOCITY, OPTIMAL_Q_SCALE_VELOCITY,
+        OPTIMAL_R_POSITION, OPTIMAL_R_SCALE
+    )
 
     print("\n=== Sweep Complete ===")
     print(f"IoU sweep: {len(iou_results)} values")
     print(f"Max age sweep: {len(max_age_results)} values")
     print(f"Min hits sweep: {len(min_hits_results)} values")
+    print(f"Q velocity sweep: {len(q_velocity_results)} values")
+    print(f"Q scale velocity sweep: {len(q_scale_velocity_results)} values")
+    print(f"R position sweep: {len(r_position_results)} values")
+    print(f"R scale sweep: {len(r_scale_results)} values")
     print(f"Results and plots saved in: {OUTPUT_DIR}")
 
 
