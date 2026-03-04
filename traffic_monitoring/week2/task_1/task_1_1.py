@@ -25,7 +25,7 @@ def main():
     ############# CONFIGURATION #############
     VIDEO_PATH = "../../data/AICity_data/train/S03/c010/vdo.avi" 
     XML_PATH = "../../data/ai_challenge_s03_c010-full_annotation.xml"
-    YOLO_MODEL_NAME = "best_rand.pt"
+    YOLO_MODEL_NAME = "best.pt"
     DETR_MODEL_NAME = "rtdetr-l.pt"
     OUTPUT_DET_PATH = "yolo_detections.avi"
     OUTPUT_SIDE_BY_SIDE = "yolo_side_by_side.avi"
