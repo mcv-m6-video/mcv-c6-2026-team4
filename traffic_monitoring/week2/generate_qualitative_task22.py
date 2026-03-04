@@ -299,13 +299,13 @@ def analyze_id_switches(
 
 
 if __name__ == "__main__":
-    VIDEO_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
-    XML_PATH = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
+    VIDEO_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/AICity_data/AICity_data/train/S03/c010/vdo.avi"
+    XML_PATH = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/ai_challenge_s03_c010-full_annotation.xml"
 
-    PRED_2_1 = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_1/pred_tracking.txt"
-    PRED_2_2 = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_2/pred_tracking.txt"
+    PRED_2_1 = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_1/pred_tracking.txt"
+    PRED_2_2 = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_2/pred_tracking.txt"
 
-    OUTPUT_DIR = "/home/riubro/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_2/qualitative"
+    OUTPUT_DIR = "/home/priubrogent/MCV/mcv-c6-2026-team4/traffic_monitoring/week2/results/task_2_2/qualitative"
 
     print("Loading predictions...")
     preds_2_1 = load_mot_predictions(PRED_2_1)
