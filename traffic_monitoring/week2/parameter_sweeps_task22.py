@@ -472,7 +472,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[0, 0].set_title("Metrics vs Q Velocity (process noise)", fontsize=14)
     axes[0, 0].legend(loc="best", fontsize=8)
     axes[0, 0].grid(True, alpha=0.3)
-    axes[0, 0].set_ylim(0, 1)
+    axes[0, 0].set_ylim(0.4, 0.6)
 
     # Q Scale Velocity
     for metric in metrics:
@@ -484,7 +484,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[0, 1].set_title("Metrics vs Q Scale Velocity", fontsize=14)
     axes[0, 1].legend(loc="best", fontsize=8)
     axes[0, 1].grid(True, alpha=0.3)
-    axes[0, 1].set_ylim(0, 1)
+    axes[0, 1].set_ylim(0.4, 0.6)
 
     # R Position
     for metric in metrics:
@@ -496,7 +496,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[1, 0].set_title("Metrics vs R Position (measurement noise)", fontsize=14)
     axes[1, 0].legend(loc="best", fontsize=8)
     axes[1, 0].grid(True, alpha=0.3)
-    axes[1, 0].set_ylim(0, 1)
+    axes[1, 0].set_ylim(0.4, 0.6)
 
     # R Scale
     for metric in metrics:
@@ -508,7 +508,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[1, 1].set_title("Metrics vs R Scale (measurement noise)", fontsize=14)
     axes[1, 1].legend(loc="best", fontsize=8)
     axes[1, 1].grid(True, alpha=0.3)
-    axes[1, 1].set_ylim(0, 1)
+    axes[1, 1].set_ylim(0.4, 0.6)
 
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "kalman_noise_sweeps.png"), dpi=150)
@@ -526,6 +526,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[0, 0].set_title("HOTA vs Q Velocity", fontsize=14)
     axes[0, 0].legend()
     axes[0, 0].grid(True, alpha=0.3)
+    axes[0, 0].set_ylim(0.4, 0.6)
 
     hota_q_scale = [r["HOTA"] for r in q_scale_velocity_results]
     axes[0, 1].semilogx(q_scale_velocity_values, hota_q_scale, 'b-', linewidth=2.5)
@@ -535,6 +536,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[0, 1].set_title("HOTA vs Q Scale Velocity", fontsize=14)
     axes[0, 1].legend()
     axes[0, 1].grid(True, alpha=0.3)
+    axes[0, 1].set_ylim(0.4, 0.6)
 
     hota_r_pos = [r["HOTA"] for r in r_position_results]
     axes[1, 0].semilogx(r_position_values, hota_r_pos, 'b-', linewidth=2.5)
@@ -544,6 +546,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[1, 0].set_title("HOTA vs R Position", fontsize=14)
     axes[1, 0].legend()
     axes[1, 0].grid(True, alpha=0.3)
+    axes[1, 0].set_ylim(0.4, 0.6)
 
     hota_r_scale = [r["HOTA"] for r in r_scale_results]
     axes[1, 1].semilogx(r_scale_values, hota_r_scale, 'b-', linewidth=2.5)
@@ -553,6 +556,7 @@ def generate_plots(output_dir, optimal_iou, optimal_max_age, optimal_min_hits,
     axes[1, 1].set_title("HOTA vs R Scale", fontsize=14)
     axes[1, 1].legend()
     axes[1, 1].grid(True, alpha=0.3)
+    axes[1, 1].set_ylim(0.4, 0.6)
 
     plt.tight_layout()
     plt.savefig(os.path.join(output_dir, "kalman_noise_hota.png"), dpi=150)
