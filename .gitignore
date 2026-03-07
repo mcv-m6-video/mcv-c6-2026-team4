@@ -5,3 +5,4 @@ AICity_data
 *.zip
 *.csv
 *.json
+*.pth
