@@ -66,7 +66,7 @@ python task_1/task_1_3.py
 ```
 
 ### 5. Qualitative Evaluation
-To generate detection videos using your trained `best.pt` weights:
+To generate detection videos using the trained `best.pt` weights:
 ```bash
 python task_1/task_1_1.py
 ```
