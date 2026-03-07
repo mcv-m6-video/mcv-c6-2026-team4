@@ -119,8 +119,18 @@ def prepare_image(root_dir, viz_root_dir, fn1, fn2, keep_size):
 
     image1 = frame_utils.read_gen(osp.join(root_dir, fn1))
     image2 = frame_utils.read_gen(osp.join(root_dir, fn2))
-    image1 = np.array(image1).astype(np.uint8)[..., :3]
-    image2 = np.array(image2).astype(np.uint8)[..., :3]
+
+    image1 = np.array(image1).astype(np.uint8)
+    if image1.ndim == 2:
+        image1 = np.stack([image1]*3, axis=-1)
+    else:
+        image1 = image1[..., :3]
+    image2 = np.array(image2).astype(np.uint8)
+    if image2.ndim == 2:
+        image2 = np.stack([image2]*3, axis=-1)
+    else:
+        image2 = image2[..., :3]
+    
     if not keep_size:
         dsize = compute_adaptive_image_size(image1.shape[0:2])
         image1 = cv2.resize(image1, dsize=dsize, interpolation=cv2.INTER_CUBIC)
@@ -129,10 +139,10 @@ def prepare_image(root_dir, viz_root_dir, fn1, fn2, keep_size):
     image2 = torch.from_numpy(image2).permute(2, 0, 1).float()
 
 
-    dirname = osp.dirname(fn1)
+    viz_dir = viz_root_dir
+    os.makedirs(viz_dir, exist_ok=True)
     filename = osp.splitext(osp.basename(fn1))[0]
 
-    viz_dir = osp.join(viz_root_dir, dirname)
     if not osp.exists(viz_dir):
         os.makedirs(viz_dir)
 
@@ -153,14 +163,32 @@ def build_model():
 
 def visualize_flow(root_dir, viz_root_dir, model, img_pairs, keep_size):
     weights = None
+    times = []
     for img_pair in img_pairs:
         fn1, fn2 = img_pair
         print(f"processing {fn1}, {fn2}...")
 
         image1, image2, viz_fn = prepare_image(root_dir, viz_root_dir, fn1, fn2, keep_size)
+
+        # Measure inference time
+        start_time = time.time()
         flow = compute_flow(model, image1, image2, weights)
+        end_time = time.time()
+        inference_time = end_time - start_time
+        times.append(inference_time)
+        print(f"Inference time for this pair: {inference_time:.4f} s")
+
         flow_img = flow_viz.flow_to_image(flow)
         cv2.imwrite(viz_fn, flow_img[:, :, [2,1,0]])
+
+        # Print absolute path
+        abs_path = osp.abspath(viz_fn)
+        print(f"Saved flow visualization to: {abs_path}")
+        
+    if times:
+        mean_time = sum(times) / len(times)
+        print(f"\nMean inference time per image pair: {mean_time:.4f} s")
+
 
 def process_sintel(sintel_dir):
     img_pairs = []
@@ -171,6 +199,34 @@ def process_sintel(sintel_dir):
             img_pairs.append((image_list[i], image_list[i+1]))
 
     return img_pairs
+
+
+def process_kitti(kitti_dir):
+    """
+    Generate image pairs for KITTI optical flow dataset.
+    Expects directory structure like:
+        kitti_dir/
+            image_2/
+                000000_10.png
+                000000_11.png
+                ...
+    """
+
+    img_pairs = []
+
+    image_dir = os.path.join(kitti_dir, "image_0")
+    image_list = sorted(glob(os.path.join(image_dir, "*_10.png")))
+
+    for img1 in image_list:
+        img2 = img1.replace("_10.png", "_11.png")
+
+        if os.path.exists(img2):
+            img_pairs.append((img1, img2))
+
+    print(f"Found {len(img_pairs)} KITTI pairs")
+
+    return img_pairs
+
 
 def generate_pairs(dirname, start_idx, end_idx):
     img_pairs = []
@@ -187,7 +243,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--eval_type', default='sintel')
     parser.add_argument('--root_dir', default='.')
-    parser.add_argument('--sintel_dir', default='datasets/Sintel/test/clean')
+    parser.add_argument('--data_dir', default='/data/113-2/users/gasbert/master/C6/KITTI/training')
     parser.add_argument('--seq_dir', default='demo_data/mihoyo')
     parser.add_argument('--start_idx', type=int, default=1)     # starting index of the image sequence
     parser.add_argument('--end_idx', type=int, default=1200)    # ending index of the image sequence
@@ -202,7 +258,9 @@ if __name__ == '__main__':
     model = build_model()
 
     if args.eval_type == 'sintel':
-        img_pairs = process_sintel(args.sintel_dir)
+        img_pairs = process_sintel(args.data_dir)
+    elif args.eval_type == 'kitti':
+        img_pairs = process_kitti(args.data_dir)
     elif args.eval_type == 'seq':
         img_pairs = generate_pairs(args.seq_dir, args.start_idx, args.end_idx)
     with torch.no_grad():

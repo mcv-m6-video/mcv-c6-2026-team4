@@ -200,12 +200,16 @@ def validate_kitti(model, sigma=0.05):
     hws = compute_grid_indices(IMAGE_SIZE, TRAIN_SIZE)
     weights = compute_weight(hws, IMAGE_SIZE, TRAIN_SIZE, sigma)
     model.eval()
+
     val_dataset = datasets.KITTI(split='training')
     print(f"validation set size: {len(val_dataset)}")
 
     out_list, epe_list = [], []
+    msen_list, pepn_list = [], []
+
     for val_id in range(len(val_dataset)):
         image1, image2, flow_gt, valid_gt = val_dataset[val_id]
+
         new_shape = image1.shape[1:]
         if new_shape[1] != IMAGE_SIZE[1] or new_shape[0] != IMAGE_SIZE[0]:
             print(f"replace {IMAGE_SIZE} with {new_shape}")
@@ -222,33 +226,66 @@ def validate_kitti(model, sigma=0.05):
         for idx, (h, w) in enumerate(hws):
             image1_tile = image1[:, :, h:h+TRAIN_SIZE[0], w:w+TRAIN_SIZE[1]]
             image2_tile = image2[:, :, h:h+TRAIN_SIZE[0], w:w+TRAIN_SIZE[1]]
-            flow_pre, flow_low = model(image1_tile, image2_tile)
 
-            padding = (w, IMAGE_SIZE[1]-w-TRAIN_SIZE[1], h, IMAGE_SIZE[0]-h-TRAIN_SIZE[0], 0, 0)
+            flow_pre, _ = model(image1_tile, image2_tile)
+
+            padding = (w, IMAGE_SIZE[1]-w-TRAIN_SIZE[1],
+                       h, IMAGE_SIZE[0]-h-TRAIN_SIZE[0], 0, 0)
+
             flows += F.pad(flow_pre * weights[idx], padding)
             flow_count += F.pad(weights[idx], padding)
 
         flow_pre = flows / flow_count
         flow = flow_pre[0].cpu()
-        epe = torch.sum((flow - flow_gt)**2, dim=0).sqrt()
-        mag = torch.sum(flow_gt**2, dim=0).sqrt()
 
-        epe = epe.view(-1)
-        mag = mag.view(-1)
-        val = valid_gt.view(-1) >= 0.5
+        # ----- Standard KITTI metrics -----
+        epe = torch.sum((flow - flow_gt) ** 2, dim=0).sqrt()
+        mag = torch.sum(flow_gt ** 2, dim=0).sqrt()
 
-        out = ((epe > 3.0) & ((epe/mag) > 0.05)).float()
-        epe_list.append(epe[val].mean().item())
-        out_list.append(out[val].cpu().numpy())
+        epe_flat = epe.view(-1)
+        mag_flat = mag.view(-1)
+        valid_flat = valid_gt.view(-1) >= 0.5
 
-    epe_list = np.array(epe_list)
-    out_list = np.concatenate(out_list)
+        out = ((epe_flat > 3.0) & ((epe_flat / mag_flat) > 0.05)).float()
+
+        epe_list.append(epe_flat[valid_flat].mean().item())
+        out_list.append(out[valid_flat].cpu().numpy())
+
+        # ----- Additional metrics (MSEN / PEPN) -----
+        flow_np = flow.permute(1, 2, 0).numpy()
+        flow_gt_np = flow_gt.permute(1, 2, 0).numpy()
+        valid_np = valid_gt.numpy().astype(bool)
+
+        pred_u = flow_np[:, :, 0][valid_np]
+        pred_v = flow_np[:, :, 1][valid_np]
+        gt_u = flow_gt_np[:, :, 0][valid_np]
+        gt_v = flow_gt_np[:, :, 1][valid_np]
+
+        error = np.sqrt((gt_u - pred_u)**2 + (gt_v - pred_v)**2)
+
+        msen = np.mean(error)
+        pepn = (np.sum(error > 3.0) / len(error)) * 100
+
+        msen_list.append(msen)
+        pepn_list.append(pepn)
 
     epe = np.mean(epe_list)
-    f1 = 100 * np.mean(out_list)
+    f1 = 100 * np.mean(np.concatenate(out_list))
+    msen = np.mean(msen_list)
+    pepn = np.mean(pepn_list)
 
-    print("Validation KITTI: %f, %f" % (epe, f1))
-    return {'kitti-epe': epe, 'kitti-f1': f1}
+    print(f"Validation KITTI:")
+    print(f"EPE:  {epe:.4f}")
+    print(f"F1:   {f1:.4f}")
+    print(f"MSEN: {msen:.4f}")
+    print(f"PEPN: {pepn:.4f}")
+
+    return {
+        'kitti-epe': epe,
+        'kitti-f1': f1,
+        'kitti-msen': msen,
+        'kitti-pepn': pepn
+    }
 
 @torch.no_grad()
 def validate_sintel(model, sigma=0.05):
@@ -331,7 +368,7 @@ if __name__ == '__main__':
 
     print(cfg)
     model = torch.nn.DataParallel(build_flowformer(cfg))
-    model.load_state_dict(torch.load(cfg.model))
+    model.load_state_dict(torch.load(cfg.model))validate_kitti
 
     model.cuda()
     model.eval()
