@@ -8,6 +8,7 @@ import numpy as np
 from PIL import Image
 import time
 import cv2
+import json
 
 pyflow_path = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(pyflow_path)
@@ -22,7 +23,7 @@ KITTI_SEQ_45_IMGS = "../data/data_stereo_flow/training/image_0/000045_"
 GT_FLOW_OCC = "../data/data_stereo_flow/training/flow_occ/000045_10.png"
 GT_FLOW_NOC = "../data/data_stereo_flow/training/flow_noc/000045_10.png"
 OUTPUT_FOLDER= "results/"
-FAST = True
+FAST = False
 
 def main():
     os.makedirs(OUTPUT_FOLDER, exist_ok=True)
@@ -50,14 +51,24 @@ def main():
         im1, im2, alpha, ratio, minWidth, nOuterFPIterations, nInnerFPIterations,
         nSORIterations, colType)
     e = time.time()
+    total_time = e - s
     print('Time Taken: %.2f seconds for image of size (%d, %d, %d)' % (
-        e - s, im1.shape[0], im1.shape[1], im1.shape[2]))
+        total_time, im1.shape[0], im1.shape[1], im1.shape[2]))
     estimated_flow = np.concatenate((u[..., None], v[..., None]), axis=2)
     np.save(f'{OUTPUT_FOLDER}outFlow.npy', estimated_flow)
     
     # Evaluate against GT
     msen, pepn = utils.evaluate_flow(estimated_flow, GT_FLOW_NOC)
     print(f"MSEN: {msen}, PEPN: {pepn}%")
+    
+    results = {
+        "MSEN": msen,
+        "PEPN": pepn,
+        "Time": total_time
+    }
+    
+    with open(f'{OUTPUT_FOLDER}{"fast" if FAST else "default"}.json', 'w') as f:
+        json.dump(results, f, indent=4)
     
     # Fill HSV image based on flow magnitude and direction
     h, w, _=im1.shape
@@ -69,7 +80,7 @@ def main():
     
     # Convert and save
     rgb = cv2.cvtColor(hsv, cv2.COLOR_HSV2BGR)
-    cv2.imwrite(f'{OUTPUT_FOLDER}outFlow_new.png', rgb)
+    cv2.imwrite(f'{OUTPUT_FOLDER}outFlow_fast.png', rgb)
 
 if __name__ == "__main__":
     main()

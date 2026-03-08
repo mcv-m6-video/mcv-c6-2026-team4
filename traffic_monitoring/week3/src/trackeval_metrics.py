@@ -4,8 +4,6 @@ from typing import Dict, List, Tuple
 import numpy as np
 import trackeval
 
-from src.bounding_box import BoundingBox
-
 
 def _iou(b1, b2):
     xl = max(b1.left, b2.left)
