@@ -1,6 +1,5 @@
 import wandb
-#from task_1_2 import main
-from traffic_monitoring.week3.task_2.task_2 import main
+from task_1_2 import main
 
 # 1. Define the Sweep Configuration
 sweep_config = {
@@ -28,23 +27,9 @@ sweep_config = {
     }
 }
 
-ai_city_challenge = {
-    'method': 'grid',
-    'metric': {
-        'name': 'hota_idf1',
-        'goal': 'maximize'   
-    },
-    'parameters': {
-        'cameras': {
-            #'values': ['c001', 'c002', 'c003', 'c004', 'c005']
-            'values': ['c010', 'c012', 'c013', 'c014', 'c015']
-        }
-    }
-}
-
 # 2. Initialize the sweep
 sweep_id = wandb.sweep(
-    ai_city_challenge, 
+    sweep_config,
     project="C6-Week3",
 )
 

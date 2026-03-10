@@ -7,3 +7,4 @@
 #SBATCH -o logs/out.log # File to which STDOUT will be written
 #SBATCH -e logs/err.log # File to which STDERR will be written
 
+python task_2/sweep_launcher.py

@@ -30,19 +30,18 @@ from raft import RAFT
 from utils.utils import InputPadder
 
 # Paths
-AI_CITY_CHALLENGE_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN/train/S03"
+AI_CITY_CHALLENGE_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN/AI_CITY_CHALLENGE_2022_TRAIN/train"
 YOLO_WEIGHTS = "best.pt"
-GLOBAL_GT_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt"
+GLOBAL_GT_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt"
 CAR_CLASS = 0
 
 # ---------- Hyperparameters ----------
-MAX_AGE=49
+MAX_AGE=10
 IoU_THRESHOLD=0.46402325045147447
 CONF_THRESHOLD=0.4237529849452388
 
 WANDB=True
 SAVE_VIDEO = False
-OUTPUT_VIDEO_PATH = "task_1_2_raft_tracking.avi"
  
 class TrackedDetection:
     """Helper class to store predictions in the format required by trackeval_metrics.py"""
@@ -258,12 +257,8 @@ def main():
     else:
         config = None
     
-    # ---------- NEW OVERLAY CONFIG ----------
-    OUTPUT_VIDEO_PATH = "task_1_2_raft_tracking.avi"
-    # ----------------------------------------
-    
     # Load roi mask
-    roi_mask = cv2.imread(f"{AI_CITY_CHALLENGE_PATH}/{config.cameras}/roi.jpg", cv2.IMREAD_GRAYSCALE)
+    roi_mask = cv2.imread(f"{AI_CITY_CHALLENGE_PATH}/{config.sequence}/{config.camera}/roi.jpg", cv2.IMREAD_GRAYSCALE)
     _, roi_mask = cv2.threshold(roi_mask, 127, 255, cv2.THRESH_BINARY)
     
     print("Loading RAFT Model...")
@@ -273,12 +268,12 @@ def main():
     raft_model.eval()
     
     print("Loading Ground Truth...")
-    gt_with_tracks = load_global_gt_with_tracks(GLOBAL_GT_PATH, config.cameras)
+    gt_with_tracks = load_global_gt_with_tracks(GLOBAL_GT_PATH, config.camera)
 
     print("Loading YOLO Model...")
     model = YOLO(YOLO_WEIGHTS)
     
-    video = VideoPartSource(f"{AI_CITY_CHALLENGE_PATH}/{config.cameras}/vdo.avi", start_frac=0, end_frac=1) 
+    video = VideoPartSource(f"{AI_CITY_CHALLENGE_PATH}/{config.sequence}/{config.camera}/vdo.avi", start_frac=0, end_frac=1) 
     
     tracker = OpticalFlowTracker()
     all_predictions = []
@@ -295,16 +290,22 @@ def main():
             if int(box.cls[0]) == CAR_CLASS:
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 
-                # 1. Calculate raw bottom-center
-                center_x = int((x1 + x2) / 2)
-                bottom_y = int(y2)
+                # Convert to integers for mask indexing
+                ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
+                height, width = roi_mask.shape
                 
-                # 2. Clamp coordinates to STRICTLY stay inside the array bounds (0 to max_index)
-                safe_x = max(0, min(center_x, roi_mask.shape[1] - 1))
-                safe_y = max(0, min(bottom_y, roi_mask.shape[0] - 1))
+                is_outlier = False
                 
-                # 3. USE safe_y AND safe_x HERE! (Not bottom_y and center_x)
-                if roi_mask[safe_y, safe_x] == 255:
+                # Check all 4 corners against the ROI mask (mirroring eval.py logic)
+                if 0 <= ix1 < width:
+                    if 0 <= iy1 < height and roi_mask[iy1, ix1] < 255: is_outlier = True
+                    if 0 <= iy2 < height and roi_mask[iy2, ix1] < 255: is_outlier = True
+                if 0 <= ix2 < width:
+                    if 0 <= iy1 < height and roi_mask[iy1, ix2] < 255: is_outlier = True
+                    if 0 <= iy2 < height and roi_mask[iy2, ix2] < 255: is_outlier = True
+                
+                # Only keep the detection if NONE of the corners hit the black mask
+                if not is_outlier:
                     conf = float(box.conf[0].cpu().numpy())
                     detections.append(BoundingBox(top=y1, bottom=y2, left=x1, right=x2, confidence=conf))
                 
@@ -355,12 +356,14 @@ def main():
         metrics["hota_idf1"] = hota_idf1
         wandb.log(metrics)
         run.finish()
+        
+    OUTPUT_VIDEO_PATH = f"task_2_{config.camera}.avi"
 
     # --- PASS 2: Video Generation (Offline) ---
     if SAVE_VIDEO:
         print("\n--- PASS 2: Generating Interpolated Video ---")
         # Re-initialize the video reader so we start from frame 0 again
-        video_vis = VideoPartSource(f"{AI_CITY_CHALLENGE_PATH}", start_frac=0, end_frac=1) 
+        video_vis = VideoPartSource(f"{AI_CITY_CHALLENGE_PATH}/{config.sequence}/{config.camera}/vdo.avi", start_frac=0, end_frac=1) 
         fourcc = cv2.VideoWriter_fourcc(*"XVID")
         out_writer = cv2.VideoWriter(OUTPUT_VIDEO_PATH, fourcc, video_vis.fps, (video_vis.width, video_vis.height))
         
@@ -373,9 +376,10 @@ def main():
 
         for idx, frame in enumerate(tqdm(video_vis)):
             vis_frame = frame.copy()
+            current_frame_id = idx + 1
             
-            if idx in preds_by_frame:
-                for pred in preds_by_frame[idx]:
+            if current_frame_id in preds_by_frame:
+                for pred in preds_by_frame[current_frame_id]:
                     bbox = pred.bbox
                     track_id = pred.track_id
                     color = get_track_color(track_id)
