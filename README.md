@@ -11,4 +11,6 @@
 
 - [Week 1](traffic_monitoring/week1/)
 - [Week 2](traffic_monitoring/week2/)
-    - [README](traffic_monitoring/week2/README.md)
+  - [README](traffic_monitoring/week2/README.md)
+- [Week 3](traffic_monitoring/week3/)
+  - [README](traffic_monitoring/week3/README.md)
