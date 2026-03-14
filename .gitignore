@@ -6,3 +6,4 @@ AICity_data
 *.csv
 *.json
 *.pth
+*.pt

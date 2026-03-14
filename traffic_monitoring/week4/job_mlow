@@ -1,0 +1,10 @@
+#!/bin/bash
+#SBATCH -n 8            # Number of cores
+#SBATCH --mem 20000     # 16GB asked
+#SBATCH -p mlow         # Choose mlow to submit to master low prioriy queue
+#SBATCH -q masterhigh   # Requeue other users mlow jobs
+#SBATCH --gres gpu:1    # To ask Pascales MAX 8
+#SBATCH -o logs/out.log # File to which STDOUT will be written
+#SBATCH -e logs/err.log # File to which STDERR will be written
+
+python -u single_video_tracking.py
