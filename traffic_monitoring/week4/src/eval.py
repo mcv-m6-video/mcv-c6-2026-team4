@@ -18,6 +18,9 @@ from argparse import ArgumentParser
 import warnings
 warnings.filterwarnings("ignore")
 
+np.float = float
+np.int = int 
+np.bool = bool
 
 def get_args():
     parser = ArgumentParser(add_help=False, usage=usageMsg())
@@ -155,87 +158,115 @@ def print_results(summary, mread=False):
 
 def compute_hota(gts, ts):
     """
-    Computes the HOTA metric by formatting pandas DataFrames 
-    into the dictionary structure expected by TrackEval.
+    Computes HOTA, DetA, and AssA using TrackEval logic.
+    Aligns Multi-Camera frames and uses project-specific BoundingBox class.
     """
     try:
-        from trackeval.metrics.hota import HOTA
+        import trackeval
     except ImportError:
-        print("Warning: trackeval library not found. HOTA will be None.")
-        print("Install via: pip install git+https://github.com/JonathonLuiten/TrackEval.git")
-        return None
+        print("DEBUG: HOTA failed - 'trackeval' library is not installed.")
+        return None, None, None
 
-    import motmetrics as mm
+    import numpy as np
+    import pandas as pd
+    from src.bounding_box import BoundingBox
 
+    def _iou_local(b1, b2):
+        xl = max(b1.left, b2.left)
+        yt = max(b1.top,  b2.top)
+        xr = min(b1.right, b2.right)
+        yb = min(b1.bottom, b2.bottom)
+        if xr < xl or yb < yt: return 0.0
+        inter = (xr - xl) * (yb - yt)
+        a1 = (b1.right - b1.left) * (b1.bottom - b1.top)
+        a2 = (b2.right - b2.left) * (b2.bottom - b2.top)
+        union = a1 + a2 - inter
+        return inter / union if union > 0 else 0.0
+
+    # 1. Align frames for Multi-Camera evaluation
     gtds, tsds = [], []
-    gtcams = gts['CameraId'].drop_duplicates().tolist()
-    tscams = ts['CameraId'].drop_duplicates().tolist()
     maxFrameId = 0
-
-    # Align FrameIds across cameras into a single continuous sequence
-    for k in sorted(gtcams):
-        gtd = gts.query('CameraId == %d' % k).copy()
+    for k in sorted(gts['CameraId'].unique()):
+        gtd = gts[gts['CameraId'] == k].copy()
         mfid = gtd['FrameId'].max()
         gtd['FrameId'] += maxFrameId
         gtds.append(gtd)
-
-        if k in tscams:
-            tsd = ts.query('CameraId == %d' % k).copy()
+        
+        tsd = ts[ts['CameraId'] == k].copy()
+        if not tsd.empty:
             mfid = max(mfid, tsd['FrameId'].max())
             tsd['FrameId'] += maxFrameId
             tsds.append(tsd)
-
         maxFrameId += mfid
 
     gt_df = pd.concat(gtds) if gtds else pd.DataFrame()
     pred_df = pd.concat(tsds) if tsds else pd.DataFrame()
 
     if gt_df.empty or pred_df.empty:
-        return 0.0
+        return 0.0, 0.0, 0.0
 
-    unique_frames = sorted(set(gt_df['FrameId']).union(set(pred_df['FrameId'])))
+    # 2. Build TrackEval Data Structure
+    all_frames = sorted(set(gt_df['FrameId']) | set(pred_df['FrameId']))
     
-    gt_ids = []
-    tracker_ids = []
-    similarity_scores = []
+    gt_id_map, pred_id_map = {}, {}
 
-    # Prepare data arrays for HOTA computation
-    for f in unique_frames:
+    def get_gt_idx(raw_id):
+        if raw_id not in gt_id_map: gt_id_map[raw_id] = len(gt_id_map)
+        return gt_id_map[raw_id]
+
+    def get_pred_idx(raw_id):
+        if raw_id not in pred_id_map: pred_id_map[raw_id] = len(pred_id_map)
+        return pred_id_map[raw_id]
+
+    data = {
+        "gt_ids": [], "tracker_ids": [], "similarity_scores": [],
+        "num_gt_dets": 0, "num_tracker_dets": 0, "num_timesteps": len(all_frames),
+        "gt_extras": []
+    }
+
+    for f in all_frames:
         gt_f = gt_df[gt_df['FrameId'] == f]
         pred_f = pred_df[pred_df['FrameId'] == f]
 
-        gt_ids.append(gt_f['Id'].to_numpy(dtype=int))
-        tracker_ids.append(pred_f['Id'].to_numpy(dtype=int))
+        gt_ids = [get_gt_idx(tid) for tid in gt_f['Id']]
+        pred_ids = [get_pred_idx(tid) for tid in pred_f['Id']]
 
-        if len(gt_f) > 0 and len(pred_f) > 0:
-            g_boxes = gt_f[['X', 'Y', 'Width', 'Height']].to_numpy()
-            p_boxes = pred_f[['X', 'Y', 'Width', 'Height']].to_numpy()
-            
-            # motmetrics returns distances (1 - IoU). Convert back to similarities.
-            dist_matrix = mm.distances.iou_matrix(g_boxes, p_boxes, max_iou=1.0)
-            sim_matrix = 1.0 - dist_matrix
-            sim_matrix[np.isnan(sim_matrix)] = 0.0 
-            similarity_scores.append(sim_matrix)
-        else:
-            similarity_scores.append(np.empty((len(gt_f), len(pred_f))))
+        data["gt_ids"].append(np.array(gt_ids, dtype=int))
+        data["tracker_ids"].append(np.array(pred_ids, dtype=int))
+        data["num_gt_dets"] += len(gt_ids)
+        data["num_tracker_dets"] += len(pred_ids)
+        data["gt_extras"].append({})
 
-    # TrackEval expected structure
-    data = {
-        'num_timesteps': len(unique_frames),
-        'gt_ids': gt_ids,
-        'tracker_ids': tracker_ids,
-        'similarity_scores': similarity_scores
-    }
+        # FIX: Pass 1.0 as the default confidence to satisfy BoundingBox.__init__
+        gt_boxes = [
+            BoundingBox(left=r.X, top=r.Y, right=r.X+r.Width, bottom=r.Y+r.Height, confidence=1.0) 
+            for r in gt_f.itertuples()
+        ]
+        pred_boxes = [
+            BoundingBox(left=r.X, top=r.Y, right=r.X+r.Width, bottom=r.Y+r.Height, confidence=1.0) 
+            for r in pred_f.itertuples()
+        ]
 
+        n_gt, n_pred = len(gt_boxes), len(pred_boxes)
+        sim = np.zeros((n_gt, n_pred), dtype=float)
+        for i, b_gt in enumerate(gt_boxes):
+            for j, b_pred in enumerate(pred_boxes):
+                sim[i, j] = _iou_local(b_gt, b_pred)
+        
+        data["similarity_scores"].append(sim)
+
+    data["num_gt_ids"] = len(gt_id_map)
+    data["num_tracker_ids"] = len(pred_id_map)
+
+    # 3. Metric Calculation
     try:
-        hota_metric = HOTA()
+        hota_metric = trackeval.metrics.HOTA()
         res = hota_metric.eval_sequence(data)
-        # We extract the aggregated HOTA score and scale it to a percentage
-        hota_score = res['HOTA'][0] * 100.0 if isinstance(res['HOTA'], (list, np.ndarray)) else np.mean(res['HOTA']) * 100.0 
-        return hota_score
+        # Average results over the multi-threshold IoU range
+        return np.mean(res['HOTA']) * 100.0, np.mean(res['DetA']) * 100.0, np.mean(res['AssA']) * 100.0
     except Exception as e:
-        print(f"Error computing HOTA internally: {e}")
-        return None
+        print(f"DEBUG: TrackEval error: {e}")
+        return None, None, None   
 
 def eval(test, pred, **kwargs):
     """ Evaluate submission.
@@ -501,9 +532,12 @@ def eval(test, pred, **kwargs):
     # evaluate results
     summary = compare_dataframes_mtmc(test, pred)
     
-    hota_score = compute_hota(test, pred)
-    if hota_score is not None:
-        summary['hota'] = hota_score
+    hota, deta, assa = compute_hota(test, pred)
+    
+    if hota is not None:
+        summary['hota'] = hota
+        summary['deta'] = deta
+        summary['assa'] = assa
         
     return summary
 

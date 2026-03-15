@@ -15,16 +15,16 @@ sweep_config = {
         },
         'conf_threshold': { 
             'distribution': 'uniform',
-            'min': 0.2,
+            'min': 0.4,
             'max': 0.7
         },
         'max_age': {
             'distribution': 'int_uniform',
-            'min': 0,
+            'min': 0, 
             'max': 20
         },
         'global_match_threshold': {
-            'distribution': 'uniform',
+            'distribution': 'uniform', 
             'min': 0.5,
             'max': 0.9
         }

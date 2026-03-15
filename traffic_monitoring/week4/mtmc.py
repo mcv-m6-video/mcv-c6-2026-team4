@@ -14,7 +14,6 @@ from src.model import ft_net
 from src.bounding_box import BoundingBox
 from src.video_source import VideoPartSource
 from src.multi_tracker import MultiTracker
-
 # ---------- CONFIGURATION ----------
 # Base paths
 AI_CITY_BASE_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN"
@@ -151,28 +150,59 @@ def main():
         # Step B: Feature Extraction & Global Matching
         for track in tqdm(finished_tracks, desc="Re-ID & Global Linking"):
             signature = extract_reid_features(reid_model, reid_transform, track["history"], device)
-            if signature is None: continue
+            if signature is None: 
+                continue
 
             matched_global_id = None
 
-            if not global_gallery:
+            # 1. Filter the gallery to exclude entries from the CURRENT camera
+            # This enforces the assumption that a car cannot pass the same camera twice.
+            eligible_indices = [
+                i for i, g in enumerate(global_gallery) 
+                if g["cam_id"] != cam_int
+            ]
+
+            # 2. Perform matching ONLY if there are eligible candidates in the gallery
+            if not global_gallery or not eligible_indices:
+                # No gallery yet or no eligible candidates from other cameras
                 matched_global_id = next_global_id
-                global_gallery.append({"global_id": next_global_id, "feature": signature})
+                global_gallery.append({
+                    "global_id": next_global_id, 
+                    "feature": signature, 
+                    "cam_id": cam_int  # Store cam_id for future filtering
+                })
                 next_global_id += 1
             else:
-                gallery_features = np.array([g["feature"] for g in global_gallery])
-                similarities = np.dot(gallery_features, signature) 
+                # Extract features for eligible candidates only
+                eligible_features = np.array([global_gallery[i]["feature"] for i in eligible_indices])
                 
-                best_match_idx = np.argmax(similarities)
-                best_sim = similarities[best_match_idx]
+                # Calculate cosine similarity (via dot product of normalized vectors)
+                similarities = np.dot(eligible_features, signature)
+                
+                best_local_idx = np.argmax(similarities)
+                best_sim = similarities[best_local_idx]
+                
+                # Map the local 'eligible' index back to the main gallery index
+                best_global_idx = eligible_indices[best_local_idx]
 
                 if best_sim > global_match_threshold:
-                    matched_global_id = global_gallery[best_match_idx]["global_id"]
-                    updated_feat = 0.8 * global_gallery[best_match_idx]["feature"] + 0.2 * signature
-                    global_gallery[best_match_idx]["feature"] = updated_feat / np.linalg.norm(updated_feat)
+                    # Match found in a DIFFERENT camera
+                    matched_global_id = global_gallery[best_global_idx]["global_id"]
+                    
+                    # Update the gallery feature with a momentum-based average
+                    updated_feat = 0.8 * global_gallery[best_global_idx]["feature"] + 0.2 * signature
+                    global_gallery[best_global_idx]["feature"] = updated_feat / np.linalg.norm(updated_feat)
+                    
+                    # Optional: Update cam_id to the most recent camera if needed, 
+                    # but keeping the original cam_id check is safer for your assumption.
                 else:
+                    # No high-confidence match found; treat as a new car
                     matched_global_id = next_global_id
-                    global_gallery.append({"global_id": next_global_id, "feature": signature})
+                    global_gallery.append({
+                        "global_id": next_global_id, 
+                        "feature": signature, 
+                        "cam_id": cam_int
+                    })
                     next_global_id += 1
 
             # Step C: Write to output file exactly how eval.py expects it
