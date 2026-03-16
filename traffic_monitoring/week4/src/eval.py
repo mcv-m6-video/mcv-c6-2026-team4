@@ -128,33 +128,37 @@ def readData(fpath):
 
 
 def print_results(summary, mread=False):
-    """Print a summary dataframe in a human- or machine-readable format.
+    """Print a summary dataframe in a human- or machine-readable format."""
     
-    Params
-    ------
-    summary : pandas.DataFrame
-        Data frame of evaluation results in motmetrics format.
-    mread : bool
-        Whether to print results in machine-readable format (JSON).
-    Returns
-    -------
-    None
-        Prints results to screen.
-    """
     if mread:
         print('{"results":%s}' % summary.iloc[-1].to_json())
         return
+
+    # Metrics to display
+    cols = ['idf1', 'idp', 'idr']
     
-    formatters = {'idf1': '{:2.2f}'.format,
-                  'idp': '{:2.2f}'.format,
-                  'idr': '{:2.2f}'.format}
-    
-    summary = summary[['idf1','idp','idr']]
-    summary['idp'] *= 100
-    summary['idr'] *= 100
-    summary['idf1'] *= 100
-    print(mm.io.render_summary(summary, formatters=formatters, namemap=mm.io.motchallenge_metric_names))
-    return
+    # Add HOTA metrics if available
+    for c in ['hota', 'deta', 'assa']:
+        if c in summary.columns:
+            cols.append(c)
+
+    summary = summary[cols]
+
+    # Convert MOT metrics to %
+    if 'idf1' in summary: summary['idf1'] *= 100
+    if 'idp' in summary: summary['idp'] *= 100
+    if 'idr' in summary: summary['idr'] *= 100
+
+    formatters = {
+        'idf1': '{:2.2f}'.format,
+        'idp': '{:2.2f}'.format,
+        'idr': '{:2.2f}'.format,
+        'hota': '{:2.2f}'.format,
+        'deta': '{:2.2f}'.format,
+        'assa': '{:2.2f}'.format,
+    }
+
+    print(mm.io.render_summary(summary, formatters=formatters))
 
 def compute_hota(gts, ts):
     """

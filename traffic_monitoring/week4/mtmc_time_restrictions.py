@@ -56,8 +56,29 @@ else:
     TWO_CAMERAS_SAME_TIME_CONSTRAINT = False
 # -----------------------------------
 
+# Feature fusion
+USE_COLOR_FUSION = False
+COLOR_WEIGHT = 0.3
+ROOF_REGION = False
+CENTRAL_REGION = True
+
+USE_SHAPE_SIGNATURE = False
+SHAPE_WEIGHT = 0.15
+
+if USE_COLOR_FUSION:
+    if USE_SHAPE_SIGNATURE:
+        REID_WEIGHT = 1.0 - COLOR_WEIGHT - SHAPE_WEIGHT
+    else:
+        REID_WEIGHT = 1.0 - COLOR_WEIGHT
+elif USE_SHAPE_SIGNATURE:
+    REID_WEIGHT = 1.0 - SHAPE_WEIGHT
+else:
+    REID_WEIGHT = 1.0
+# -----------------------------------
+
 
 WANDB=False
+
 
 def extract_reid_features(reid_model, transform, track_history, device):
     """Samples evenly spaced crops and extracts the average Re-ID feature."""
@@ -81,6 +102,100 @@ def extract_reid_features(reid_model, transform, track_history, device):
     avg_feature = np.mean(features, axis=0)
     return (avg_feature / np.linalg.norm(avg_feature))[0]
 
+
+def extract_color_histogram(track_history):
+    """Compute HSV histogram using center crop to reduce background noise."""
+    if len(track_history) == 0:
+        return None
+
+    hists = []
+
+    for entry in track_history:
+        crop = entry["img"]
+        if crop is None or crop.size == 0:
+            continue
+
+        h, w = crop.shape[:2]
+
+        if CENTRAL_REGION:
+            # Keep only central region (remove borders)
+            x1 = int(w * 0.2)
+            x2 = int(w * 0.8)
+            y1 = int(h * 0.2)
+            y2 = int(h * 0.8)
+
+            center_crop = crop[y1:y2, x1:x2]
+
+            hsv = cv2.cvtColor(center_crop, cv2.COLOR_BGR2HSV)
+        elif ROOF_REGION:
+            # --- ROOF REGION ---
+            # Use top part of the bounding box
+            y1 = int(h * 0.05)   # small margin to avoid bbox border
+            y2 = int(h * 0.35)   # roof area
+            x1 = int(w * 0.1)
+            x2 = int(w * 0.9)
+
+            roof_crop = crop[y1:y2, x1:x2]
+
+            if roof_crop.size == 0:
+                continue
+
+            hsv = cv2.cvtColor(roof_crop, cv2.COLOR_BGR2HSV)
+        else:
+            hsv = cv2.cvtColor(crop, cv2.COLOR_BGR2HSV)
+
+        hist = cv2.calcHist([hsv], [0], None, [32], [0,180])
+
+        hist = cv2.normalize(hist, hist).flatten()
+        hists.append(hist)
+
+    if not hists:
+        return None
+
+    avg_hist = np.mean(hists, axis=0)
+    return avg_hist / np.linalg.norm(avg_hist)
+
+def histogram_similarity(h1, h2):
+    if h1 is None or h2 is None:
+        return 0.0
+    return np.dot(h1, h2)
+
+def extract_shape_signature(track_history):
+    """
+    Compute a simple vehicle shape signature for a track.
+    Returns a normalized 3D vector:
+    [avg_aspect_ratio, avg_area, size_change_rate]
+    """
+    if len(track_history) == 0:
+        return None
+
+    aspect_ratios = []
+    areas = []
+
+    for entry in track_history:
+        bbox = entry["bbox"]
+
+        w = bbox.right - bbox.left
+        h = bbox.bottom - bbox.top
+
+        if h <= 0:
+            continue
+
+        aspect_ratios.append(w / h)
+        areas.append(w * h)
+
+    if len(aspect_ratios) == 0:
+        return None
+
+    avg_aspect = np.mean(aspect_ratios)
+    avg_area = np.mean(areas)
+
+    # size change rate
+    size_change = abs(areas[-1] - areas[0]) / (areas[0] + 1e-6)
+
+    shape_vec = np.array([avg_aspect, avg_area, size_change], dtype=np.float32)
+
+    return shape_vec / np.linalg.norm(shape_vec)
 
 def main():
     if WANDB:
@@ -181,6 +296,14 @@ def main():
             signature = extract_reid_features(reid_model, reid_transform, track["history"], device)
             if signature is None: continue
 
+            color_signature = None
+            if USE_COLOR_FUSION:
+                color_signature = extract_color_histogram(track["history"])
+
+            shape_signature = None
+            if USE_SHAPE_SIGNATURE:
+                shape_signature = extract_shape_signature(track["history"])
+
             fps = 10
             track_start_frame = track["history"][0]["frame"]
             track_end_frame = track["history"][-1]["frame"]
@@ -217,14 +340,31 @@ def main():
                 global_gallery.append({
                     "global_id": next_global_id,
                     "feature": signature,
+                    "color": color_signature,
+                    "shape": shape_signature,
                     "camera": cam_int,
                     "start_time": track_start,
                     "end_time": track_end
                 })
                 next_global_id += 1
             else:
-                gallery_features = np.array([g["feature"] for g in valid_gallery])
-                similarities = np.dot(gallery_features, signature)
+                similarities = []
+
+                for gallery_entry in valid_gallery:
+                    reid_sim = np.dot(gallery_entry["feature"], signature)
+
+                    sim = REID_WEIGHT * reid_sim
+
+                    if USE_COLOR_FUSION:
+                        color_sim = histogram_similarity(gallery_entry["color"], color_signature)
+                        sim += COLOR_WEIGHT * color_sim
+
+                    if USE_SHAPE_SIGNATURE and gallery_entry.get("shape") is not None and shape_signature is not None:
+                        shape_sim = np.dot(gallery_entry["shape"], shape_signature)
+                        sim += SHAPE_WEIGHT * shape_sim
+                    similarities.append(sim)
+
+                similarities = np.array(similarities)
 
                 best_match_idx = np.argmax(similarities)
                 best_sim = similarities[best_match_idx]
@@ -236,6 +376,14 @@ def main():
                     updated_feat = 0.8 * best_match["feature"] + 0.2 * signature
                     best_match["feature"] = updated_feat / np.linalg.norm(updated_feat)
 
+                    if USE_COLOR_FUSION and color_signature is not None:
+                        updated_color = 0.8 * best_match["color"] + 0.2 * color_signature
+                        best_match["color"] = updated_color / np.linalg.norm(updated_color)
+                    
+                    if USE_SHAPE_SIGNATURE and shape_signature is not None:
+                        updated_shape = 0.8 * best_match["shape"] + 0.2 * shape_signature
+                        best_match["shape"] = updated_shape / np.linalg.norm(updated_shape)
+
                     # update time span
                     best_match["start_time"] = min(best_match["start_time"], track_start)
                     best_match["end_time"] = max(best_match["end_time"], track_end)
@@ -246,6 +394,8 @@ def main():
                         "global_id": next_global_id,
                         "feature": signature,
                         "camera": cam_int,
+                        "color": color_signature,
+                        "shape": shape_signature,
                         "start_time": track_start,
                         "end_time": track_end
                     })
@@ -281,6 +431,7 @@ def main():
         # print_results from your eval.py
         print_results(summary, mread=False)
         results=get_results(summary)
+        print(results)
         
         if WANDB:
             wandb.log(results)
