@@ -3,7 +3,7 @@ from typing import Iterator, Optional
 import cv2
 import numpy as np
 
-from dataset import Camera, Sequence
+from src.dataset import Camera, Sequence
 
 
 class SyncedCameraSource:

@@ -1,11 +1,14 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from typing import Protocol
+from typing import TYPE_CHECKING, Protocol
 
 import numpy as np
 
 from src.world_and_camera_tracking import WorldObservation, WorldPoint, WorldTrack
+
+if TYPE_CHECKING:
+    from src.camera_graph import CameraGraph
 
 
 # ---------------------------------------------------------------------------
@@ -86,6 +89,8 @@ class _GalleryEntry:
     last_timestamp: float | None
     last_velocity: np.ndarray | None  # world units / second at track end
     camera_ids: set[str]
+    last_camera_id: str = ""         # camera that contributed the most recent tracklet
+    original_camera_id: str = ""     # camera that created this entry (never changes)
 
 
 # ---------------------------------------------------------------------------
@@ -158,11 +163,14 @@ class CombinedAssociator:
         w_velocity: float = 0.0,
         match_threshold: float = 0.4,
         same_camera_filter: bool = True,
+        camera_graph: CameraGraph | None = None,
         feature_momentum: float = 0.8,
         spatial_scale: float = 1.0,
         temporal_scale: float = 1.0,
         max_time_gap: float = float("inf"),
         max_spatial_gap: float = float("inf"),
+        debug_costs: bool = False,
+        sequential_cameras: list[str] | None = None,
     ) -> None:
         self.w_appearance = w_appearance
         self.w_spatial = w_spatial
@@ -170,11 +178,14 @@ class CombinedAssociator:
         self.w_velocity = w_velocity
         self.match_threshold = match_threshold
         self.same_camera_filter = same_camera_filter
+        self.camera_graph = camera_graph
         self.feature_momentum = feature_momentum
         self.spatial_scale = spatial_scale
         self.temporal_scale = temporal_scale
         self.max_time_gap = max_time_gap
         self.max_spatial_gap = max_spatial_gap
+        self.debug_costs = debug_costs
+        self.sequential_cameras = sequential_cameras
 
     # ------------------------------------------------------------------
     # Public API
@@ -183,14 +194,20 @@ class CombinedAssociator:
         """
         Associates `world_tracks` into global tracks.
 
-        Processes tracklets in ascending start-timestamp order so that the
-        gallery always contains tracks that began before the current tracklet,
-        making temporal/velocity costs well-defined.
+        When `sequential_cameras` is set, tracklets are processed camera by
+        camera in the given order (all of cam[0] first, then cam[1], …),
+        matching mtmc.py's sequential strategy.  Otherwise, all tracklets are
+        sorted by start timestamp (default, better for spatial/temporal costs).
         """
         gallery: list[_GalleryEntry] = []
         next_global_id = 1
 
-        for wt in self._sort_by_start(world_tracks):
+        ordered = (
+            self._sort_by_camera(world_tracks, self.sequential_cameras)
+            if self.sequential_cameras is not None
+            else self._sort_by_start(world_tracks)
+        )
+        for wt in ordered:
             best_entry, best_cost = self._find_best_match(wt, gallery)
 
             if best_entry is not None:
@@ -213,8 +230,26 @@ class CombinedAssociator:
         best_cost = float("inf")
 
         for entry in gallery:
-            if self.same_camera_filter and wt.camera_id in entry.camera_ids:
-                continue
+            if self.camera_graph is not None:
+                # Graph-based topology gate: replaces same_camera_filter when a
+                # graph is present.  Uses the most recent camera in the gallery
+                # track as the transition source.
+                t_gap = self._time_gap(wt, entry)
+                if not self.camera_graph.is_transition_feasible(
+                    entry.last_camera_id, wt.camera_id, t_gap
+                ):
+                    continue
+            elif self.same_camera_filter:
+                # Sequential mode replicates mtmc.py: block only if the
+                # incoming tracklet is from the *original* creator camera
+                # (cam_id is never updated in mtmc.py, so multiple tracklets
+                # from the same non-creator camera can merge into one global).
+                # Default mode: block if camera already contributed at all.
+                if self.sequential_cameras is not None:
+                    if wt.camera_id == entry.original_camera_id:
+                        continue
+                elif wt.camera_id in entry.camera_ids:
+                    continue
             cost = self._compute_cost(wt, entry)
             if cost < best_cost:
                 best_cost, best_entry = cost, entry
@@ -236,24 +271,49 @@ class CombinedAssociator:
                 return float("inf")
 
         cost = 0.0
+        dbg: dict = {}  # populated only when debug_costs=True
 
-        if self.w_appearance > 0:
-            cost += self.w_appearance * self._appearance_cost(wt, entry)
+        app_raw = self._appearance_cost(wt, entry) if self.w_appearance > 0 else None
+        if app_raw is not None:
+            app_w = self.w_appearance * app_raw
+            cost += app_w
+            if self.debug_costs:
+                dbg["appearance"] = {"raw": app_raw, "weighted": app_w}
 
-        if self.w_spatial > 0:
-            s_dist = self._spatial_dist(wt, entry)
-            if s_dist is not None:
-                cost += self.w_spatial * s_dist / self.spatial_scale
+        s_dist = self._spatial_dist(wt, entry) if self.w_spatial > 0 else None
+        if s_dist is not None:
+            s_norm = s_dist / self.spatial_scale
+            s_w = self.w_spatial * s_norm
+            cost += s_w
+            if self.debug_costs:
+                dbg["spatial"] = {"raw": s_dist, "norm": s_norm, "weighted": s_w}
 
-        if self.w_temporal > 0:
-            t_gap = self._time_gap(wt, entry)
-            if t_gap is not None:
-                cost += self.w_temporal * t_gap / self.temporal_scale
+        t_gap = self._time_gap(wt, entry) if self.w_temporal > 0 else None
+        if t_gap is not None:
+            t_norm = t_gap / self.temporal_scale
+            t_w = self.w_temporal * t_norm
+            cost += t_w
+            if self.debug_costs:
+                dbg["temporal"] = {"raw": t_gap, "norm": t_norm, "weighted": t_w}
 
-        if self.w_velocity > 0:
-            v_err = self._velocity_error(wt, entry)
-            if v_err is not None:
-                cost += self.w_velocity * v_err / self.spatial_scale
+        v_err = self._velocity_error(wt, entry) if self.w_velocity > 0 else None
+        if v_err is not None:
+            v_norm = v_err / self.spatial_scale
+            v_w = self.w_velocity * v_norm
+            cost += v_w
+            if self.debug_costs:
+                dbg["velocity"] = {"raw": v_err, "norm": v_norm, "weighted": v_w}
+
+        if self.debug_costs:
+            src = f"{entry.last_camera_id}/g{entry.global_track.global_id}"
+            dst = f"{wt.camera_id}/t{wt.track_id}"
+            parts = []
+            for name, vals in dbg.items():
+                if "norm" in vals:
+                    parts.append(f"{name}: {vals['raw']:.4g} → {vals['norm']:.4g} → {vals['weighted']:.4g}")
+                else:
+                    parts.append(f"{name}: {vals['raw']:.4g} → {vals['weighted']:.4g}")
+            print(f"  [{src} → {dst}]  total={cost:.4f}  |  " + "  |  ".join(parts))
 
         return cost
 
@@ -323,6 +383,8 @@ class CombinedAssociator:
             last_timestamp=last_ts,
             last_velocity=last_vel,
             camera_ids={wt.camera_id},
+            last_camera_id=wt.camera_id,
+            original_camera_id=wt.camera_id,
         )
 
     def _update_entry(self, entry: _GalleryEntry, wt: WorldTrack) -> None:
@@ -343,6 +405,7 @@ class CombinedAssociator:
             entry.last_velocity = wt.velocity_at(-1)
 
         entry.camera_ids.add(wt.camera_id)
+        entry.last_camera_id = wt.camera_id
 
     # ------------------------------------------------------------------
     # Utilities
@@ -356,6 +419,28 @@ class CombinedAssociator:
                     return ts
                 return float(wt.world_observations[0].frame_idx)
             return 0.0
+        return sorted(world_tracks, key=key)
+
+    @staticmethod
+    def _sort_by_camera(
+        world_tracks: list[WorldTrack], camera_order: list[str]
+    ) -> list[WorldTrack]:
+        """
+        Sort tracklets camera-by-camera in the given order, then by start
+        timestamp within each camera.  Tracklets from cameras not in
+        `camera_order` are appended at the end, sorted by timestamp.
+        Replicates mtmc.py's sequential per-camera processing strategy.
+        """
+        rank = {cam: i for i, cam in enumerate(camera_order)}
+
+        def key(wt: WorldTrack):
+            cam_rank = rank.get(wt.camera_id, len(camera_order))
+            ts = 0.0
+            if wt.world_observations:
+                t = wt.world_observations[0].timestamp
+                ts = t if t is not None else float(wt.world_observations[0].frame_idx)
+            return (cam_rank, ts)
+
         return sorted(world_tracks, key=key)
 
 

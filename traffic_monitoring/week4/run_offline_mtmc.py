@@ -93,6 +93,8 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--feature-momentum", type=float, default=0.8)
     p.add_argument("--debug-costs", action="store_true",
                    help="Print per-pair cost breakdown during association (very verbose)")
+    p.add_argument("--sequential-cameras", action="store_true",
+                   help="Process cameras sequentially (like mtmc.py) instead of interleaved by timestamp")
 
     # Camera connectivity graph
     p.add_argument("--camera-graph", action="store_true",
@@ -186,6 +188,7 @@ def run_pipeline(args) -> list[GlobalTrack]:
         spatial_scale=args.spatial_scale,
         temporal_scale=args.temporal_scale,
         debug_costs=args.debug_costs,
+        sequential_cameras=args.cameras if args.sequential_cameras else None,
     )
 
     tracker = OfflineMulticameraTracker(

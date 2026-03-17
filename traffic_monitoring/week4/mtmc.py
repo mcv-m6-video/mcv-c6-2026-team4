@@ -4,6 +4,8 @@ import traceback
 import cv2
 import torch
 import numpy as np
+if not hasattr(np, "asfarray"):          # removed in NumPy 2.0, needed by motmetrics
+    np.asfarray = lambda a, dtype=float: np.asarray(a, dtype=dtype)
 from tqdm import tqdm
 import torchvision.transforms as T
 from ultralytics import YOLO
@@ -25,6 +27,7 @@ OUTPUT_PRED_FILE = "mtmc_predictions.txt"
 YOLO_WEIGHTS = "./yolov10s_coco.pt"
 REID_WEIGHTS = "./src/net_19.pth"
 CAMERAS = ["c001", "c002", "c003", "c004", "c005"] 
+CAMERAS = ["c001", "c002", "c003", "c004", "c005"][::-1]
 
 # Hyperparameters
 CONF_THRESHOLD = 0.45
