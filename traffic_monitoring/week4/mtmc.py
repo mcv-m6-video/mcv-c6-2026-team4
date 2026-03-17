@@ -1,5 +1,6 @@
 import os
 import sys
+import traceback
 import cv2
 import torch
 import numpy as np
@@ -34,7 +35,7 @@ GLOBAL_MATCH_THRESH = 0.6
 CAR_CLASS = 0
 # -----------------------------------
 
-WANDB=True
+WANDB=False
 
 def extract_reid_features(reid_model, transform, track_history, device):
     """Samples evenly spaced crops and extracts the average Re-ID feature."""
@@ -242,6 +243,7 @@ def main():
         
     except Exception as e:
         print(f"Error during evaluation: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()
