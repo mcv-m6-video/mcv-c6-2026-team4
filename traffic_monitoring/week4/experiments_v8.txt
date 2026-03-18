@@ -1,0 +1,298 @@
+python3 run_experiments.py 
+Running 11 experiment(s)  →  output/experiments/
+Started: 2026-03-18 16:21:38
+
+============================================================
+  RUN: geo_ref
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_ref --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.0
+============================================================
+  Predictions saved → output/experiments/geo_ref/S01_predictions.txt
+    41630 raw detection-level rows  |  192 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 45.60 63.40 35.60 32.37 23.71 44.26
+  
+  Summary:
+    IDF1  :  45.60
+    IDP   :  63.40
+    IDR   :  35.60
+    MOTA  :  22.45
+    HOTA  :  32.37
+  
+  Building world-map background …
+  Precomputing fused positions for 192 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_ref/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s065_w01
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s065_w01 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.1 --geo-scale 0.000065
+============================================================
+  Predictions saved → output/experiments/geo_s065_w01/S01_predictions.txt
+    41630 raw detection-level rows  |  215 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.92 57.56 31.74 29.64 23.13 38.08
+  
+  Summary:
+    IDF1  :  40.92
+    IDP   :  57.56
+    IDR   :  31.74
+    MOTA  :  21.54
+    HOTA  :  29.64
+  
+  Building world-map background …
+  Precomputing fused positions for 215 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s065_w01/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s065_w02
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s065_w02 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.2 --geo-scale 0.000065
+============================================================
+  Predictions saved → output/experiments/geo_s065_w02/S01_predictions.txt
+    41630 raw detection-level rows  |  231 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.05 53.87 29.42 28.47 23.03 35.32
+  
+  Summary:
+    IDF1  :  38.05
+    IDP   :  53.87
+    IDR   :  29.42
+    MOTA  :  21.54
+    HOTA  :  28.47
+  
+  Building world-map background …
+  Precomputing fused positions for 231 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s065_w02/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s065_w03
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s065_w03 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.3 --geo-scale 0.000065
+============================================================
+  Predictions saved → output/experiments/geo_s065_w03/S01_predictions.txt
+    41630 raw detection-level rows  |  262 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 33.43 48.73 25.44 26.36 22.07 31.59
+  
+  Summary:
+    IDF1  :  33.43
+    IDP   :  48.73
+    IDR   :  25.44
+    MOTA  :  20.23
+    HOTA  :  26.36
+  
+  Building world-map background …
+  Precomputing fused positions for 262 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s065_w03/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s130_w01
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s130_w01 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.1 --geo-scale 0.000130
+============================================================
+  Predictions saved → output/experiments/geo_s130_w01/S01_predictions.txt
+    41630 raw detection-level rows  |  211 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 42.30 59.54 32.81 30.49 23.11 40.30
+  
+  Summary:
+    IDF1  :  42.30
+    IDP   :  59.54
+    IDR   :  32.81
+    MOTA  :  21.58
+    HOTA  :  30.49
+  
+  Building world-map background …
+  Precomputing fused positions for 211 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s130_w01/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s130_w02
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s130_w02 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.2 --geo-scale 0.000130
+============================================================
+  Predictions saved → output/experiments/geo_s130_w02/S01_predictions.txt
+    41630 raw detection-level rows  |  231 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.30 54.09 29.65 28.52 22.98 35.49
+  
+  Summary:
+    IDF1  :  38.30
+    IDP   :  54.09
+    IDR   :  29.65
+    MOTA  :  21.32
+    HOTA  :  28.52
+  
+  Building world-map background …
+  Precomputing fused positions for 231 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s130_w02/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s130_w03
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s130_w03 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.3 --geo-scale 0.000130
+============================================================
+  Predictions saved → output/experiments/geo_s130_w03/S01_predictions.txt
+    41630 raw detection-level rows  |  248 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.54 54.54 29.79 28.54 22.89 35.69
+  
+  Summary:
+    IDF1  :  38.54
+    IDP   :  54.54
+    IDR   :  29.79
+    MOTA  :  21.17
+    HOTA  :  28.54
+  
+  Building world-map background …
+  Precomputing fused positions for 248 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s130_w03/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s130_w05
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s130_w05 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.5 --geo-scale 0.000130
+============================================================
+  Predictions saved → output/experiments/geo_s130_w05/S01_predictions.txt
+    41630 raw detection-level rows  |  282 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 32.59 47.92 24.69 25.70 21.72 30.55
+  
+  Summary:
+    IDF1  :  32.59
+    IDP   :  47.92
+    IDR   :  24.69
+    MOTA  :  19.77
+    HOTA  :  25.70
+  
+  Building world-map background …
+  Precomputing fused positions for 282 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s130_w05/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s479_w02
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s479_w02 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.2 --geo-scale 0.000479
+============================================================
+  Predictions saved → output/experiments/geo_s479_w02/S01_predictions.txt
+    41630 raw detection-level rows  |  218 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 42.39 59.99 32.78 30.48 23.15 40.21
+  
+  Summary:
+    IDF1  :  42.39
+    IDP   :  59.99
+    IDR   :  32.78
+    MOTA  :  21.91
+    HOTA  :  30.48
+  
+  Building world-map background …
+  Precomputing fused positions for 218 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s479_w02/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s479_w03
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s479_w03 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.3 --geo-scale 0.000479
+============================================================
+  Predictions saved → output/experiments/geo_s479_w03/S01_predictions.txt
+    41630 raw detection-level rows  |  227 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.63 57.97 31.27 29.68 22.74 38.82
+  
+  Summary:
+    IDF1  :  40.63
+    IDP   :  57.97
+    IDR   :  31.27
+    MOTA  :  21.26
+    HOTA  :  29.68
+  
+  Building world-map background …
+  Precomputing fused positions for 227 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s479_w03/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: geo_s479_w05
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/geo_s479_w05 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --conf 0.65 --min-track-frames 5 --w-geo 0.5 --geo-scale 0.000479
+============================================================
+  Predictions saved → output/experiments/geo_s479_w05/S01_predictions.txt
+    41630 raw detection-level rows  |  258 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.36 56.11 29.14 29.17 22.38 38.11
+  
+  Summary:
+    IDF1  :  38.36
+    IDP   :  56.11
+    IDR   :  29.14
+    MOTA  :  21.43
+    HOTA  :  29.17
+  
+  Building world-map background …
+  Precomputing fused positions for 258 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/geo_s479_w05/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+SUMMARY
+============================================================
+Name                        IDF1    IDP    IDR   HOTA   DetA   AssA
+-------------------------------------------------------------------
+geo_ref                   45.60% 63.40% 35.60% 32.37%      —      —
+geo_s065_w01              40.92% 57.56% 31.74% 29.64%      —      —
+geo_s065_w02              38.05% 53.87% 29.42% 28.47%      —      —
+geo_s065_w03              33.43% 48.73% 25.44% 26.36%      —      —
+geo_s130_w01              42.30% 59.54% 32.81% 30.49%      —      —
+geo_s130_w02              38.30% 54.09% 29.65% 28.52%      —      —
+geo_s130_w03              38.54% 54.54% 29.79% 28.54%      —      —
+geo_s130_w05              32.59% 47.92% 24.69% 25.70%      —      —
+geo_s479_w02              42.39% 59.99% 32.78% 30.48%      —      —
+geo_s479_w03              40.63% 57.97% 31.27% 29.68%      —      —
+geo_s479_w05              38.36% 56.11% 29.14% 29.17%      —      —
+
+Results saved → output/experiments/results.csv  |  output/experiments/results.md
+Finished: 2026-03-18 16:59:04

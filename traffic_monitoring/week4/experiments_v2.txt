@@ -1,0 +1,118 @@
+python3 run_experiments.py
+
+Running 4 experiment(s)  →  output/experiments/
+Started: 2026-03-18 11:35:29
+
+============================================================
+  RUN: min3_crops10_maxoverlap
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/min3_crops10_maxoverlap --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --min-track-frames 3 --n-crops 10 --tracker max_overlap
+============================================================
+  Predictions saved → output/experiments/min3_crops10_maxoverlap/S01_predictions.txt
+    51882 raw detection-level rows  |  212 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.29 49.22 34.10 29.02 23.15 36.61
+  
+  Summary:
+    IDF1  :  40.29
+    IDP   :  49.22
+    IDR   :  34.10
+    MOTA  :  13.83
+    HOTA  :  29.02
+  
+  Building world-map background …
+  Precomputing fused positions for 212 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/min3_crops10_maxoverlap/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: min3_crops10_sort
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/min3_crops10_sort --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/min3_crops10_sort/S01_predictions.txt
+    52607 raw detection-level rows  |  222 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.54 48.33 33.46 28.49 23.25 35.17
+  
+  Summary:
+    IDF1  :  39.54
+    IDP   :  48.33
+    IDR   :  33.46
+    MOTA  :  13.99
+    HOTA  :  28.49
+  
+  Building world-map background …
+  Precomputing fused positions for 222 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/min3_crops10_sort/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: min3_t050
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/min3_t050 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --min-track-frames 3 --distance-threshold 0.50
+============================================================
+  Predictions saved → output/experiments/min3_t050/S01_predictions.txt
+    52607 raw detection-level rows  |  257 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.71 49.64 33.08 28.54 22.90 35.83
+  
+  Summary:
+    IDF1  :  39.71
+    IDP   :  49.64
+    IDR   :  33.08
+    MOTA  :  14.08
+    HOTA  :  28.54
+  
+  Building world-map background …
+  Precomputing fused positions for 257 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/min3_t050/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: min3_t045
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/min3_t045 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --min-track-frames 3 --distance-threshold 0.45
+============================================================
+  Predictions saved → output/experiments/min3_t045/S01_predictions.txt
+    52607 raw detection-level rows  |  302 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.65 51.61 32.19 28.77 23.07 36.16
+  
+  Summary:
+    IDF1  :  39.65
+    IDP   :  51.61
+    IDR   :  32.19
+    MOTA  :  16.64
+    HOTA  :  28.77
+  
+  Building world-map background …
+  Precomputing fused positions for 302 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/min3_t045/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+SUMMARY
+============================================================
+Name                        IDF1    IDP    IDR   HOTA   DetA   AssA
+-------------------------------------------------------------------
+min3_crops10_maxoverlap   40.29% 49.22% 34.10% 29.02%      —      —
+min3_crops10_sort         39.54% 48.33% 33.46% 28.49%      —      —
+min3_t050                 39.71% 49.64% 33.08% 28.54%      —      —
+min3_t045                 39.65% 51.61% 32.19% 28.77%      —      —
+
+Results saved → output/experiments/results.csv  |  output/experiments/results.md
+Finished: 2026-03-18 11:42:50
+(base) arnau-marcos-almansa@arnau-torre-ubuntu:~/workspace/mcv-c6-2026-team4/traffic_monitoring/week4

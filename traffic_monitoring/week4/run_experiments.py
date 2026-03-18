@@ -283,6 +283,377 @@ EXPERIMENTS: list[dict] = [
 ]
 
 # ---------------------------------------------------------------------------
+# V4: Alternative detectors
+#
+# Best SCT config carried forward: max_overlap, iou=0.30, age=10, min3, crops10
+# All experiments use --car-class 2 for standard COCO weights (car=class 2),
+# except fasterrcnn which uses class 3 (torchvision COCO-91, background=0).
+#
+# YOLO26: update --yolo-weights to the correct filename once you have it.
+#         The --car-class 2 assumes standard COCO weights; set to 0 if custom.
+# ---------------------------------------------------------------------------
+
+BEST_SCT = [
+    "--tracker", "max_overlap",
+    "--iou-threshold", "0.30",
+    "--max-age", "10",
+    "--min-track-frames", "3",
+    "--n-crops", "10",
+]
+
+EXPERIMENTS: list[dict] = [
+    # -------------------------------------------------------------------------
+    # Reference: current best (yolov10s_coco.pt, car_class=0)
+    # -------------------------------------------------------------------------
+    {
+        "name": "v4_ref",
+        "desc": "Reference: yolov10s, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "yolo"],
+    },
+
+    # -------------------------------------------------------------------------
+    # RT-DETR  (Ultralytics, COCO weights, car_class=2)
+    # rtdetr-x  is the largest / most accurate; rtdetr-l is faster
+    # -------------------------------------------------------------------------
+    {
+        "name": "rtdetr_x",
+        "desc": "RT-DETR-X, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "rtdetr",
+                  "--rtdetr-weights", "rtdetr-x.pt"],
+    },
+    {
+        "name": "rtdetr_l",
+        "desc": "RT-DETR-L, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "rtdetr",
+                  "--rtdetr-weights", "rtdetr-l.pt"],
+    },
+
+    # -------------------------------------------------------------------------
+    # Faster R-CNN  (torchvision COCO-91 weights, car_class=3 by default)
+    # -------------------------------------------------------------------------
+    {
+        "name": "fasterrcnn_r50",
+        "desc": "Faster R-CNN ResNet50-FPN-v2, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "resnet50"],
+    },
+    {
+        "name": "fasterrcnn_mob",
+        "desc": "Faster R-CNN MobileNetV3, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "mobilenet"],
+    },
+
+    # -------------------------------------------------------------------------
+    # YOLO26  (update --yolo-weights once you have the filename)
+    # Using --car-class 2 for standard COCO weights.
+    # Change to --car-class 0 if it's a single-class custom model.
+    # -------------------------------------------------------------------------
+    {
+        "name": "yolo26n",
+        "desc": "YOLO26 nano, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26n.pt",   # <-- update filename if needed
+                  "--car-class", "2"],
+    },
+    {
+        "name": "yolo26s",
+        "desc": "YOLO26 small, max_overlap iou=0.30 min3 crops10",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26s.pt",
+                  "--car-class", "2"],
+    },
+]
+
+# ---------------------------------------------------------------------------
+# V5: Confidence threshold calibration + YOLO26 larger variants
+#
+# Key findings from V4:
+#   - RT-DETR / FasterRCNN ResNet50 drown in FPs at conf=0.45 → need higher threshold
+#   - YOLO26n is too conservative (IDR=27%) → try lower conf
+#   - YOLO26s is competitive but IDR still lower than YOLOv10s → try lower conf
+#   - FasterRCNN MobileNet has highest AssA ever (40.85) → tune its conf too
+#   - Larger YOLO26 models (m, l, x) likely close the IDR gap
+# ---------------------------------------------------------------------------
+
+EXPERIMENTS: list[dict] = [
+    # -------------------------------------------------------------------------
+    # YOLO26 — larger model sizes (auto-downloaded by Ultralytics)
+    # -------------------------------------------------------------------------
+    {
+        "name": "yolo26m",
+        "desc": "YOLO26 medium, conf=0.45",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26m.pt", "--car-class", "2"],
+    },
+    {
+        "name": "yolo26l",
+        "desc": "YOLO26 large, conf=0.45",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26l.pt", "--car-class", "2"],
+    },
+    {
+        "name": "yolo26x",
+        "desc": "YOLO26 xlarge, conf=0.45",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26x.pt", "--car-class", "2"],
+    },
+
+    # -------------------------------------------------------------------------
+    # YOLO26s — confidence threshold sweep (s was our best YOLO26 so far)
+    # Lower conf → more detections, better IDR; filter noise with min_frames
+    # -------------------------------------------------------------------------
+    {
+        "name": "yolo26s_c035",
+        "desc": "YOLO26 small, conf=0.35",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26s.pt", "--car-class", "2", "--conf", "0.35"],
+    },
+    {
+        "name": "yolo26s_c030",
+        "desc": "YOLO26 small, conf=0.30",
+        "extra": [*BEST_SCT, "--detector", "yolo",
+                  "--yolo-weights", "yolo26s.pt", "--car-class", "2", "--conf", "0.30"],
+    },
+
+    # -------------------------------------------------------------------------
+    # RT-DETR-L — higher confidence to cut false positives
+    # V4 produced 69K rows at conf=0.45 → MOTA=-11; need to find its sweet spot
+    # -------------------------------------------------------------------------
+    {
+        "name": "rtdetr_l_c060",
+        "desc": "RT-DETR-L, conf=0.60",
+        "extra": [*BEST_SCT, "--detector", "rtdetr",
+                  "--rtdetr-weights", "rtdetr-l.pt", "--conf", "0.60"],
+    },
+    {
+        "name": "rtdetr_l_c070",
+        "desc": "RT-DETR-L, conf=0.70",
+        "extra": [*BEST_SCT, "--detector", "rtdetr",
+                  "--rtdetr-weights", "rtdetr-l.pt", "--conf", "0.70"],
+    },
+
+    # -------------------------------------------------------------------------
+    # FasterRCNN ResNet50 — higher confidence to cut false positives
+    # V4 produced 84K rows at conf=0.45 → MOTA=-32
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_r50_c065",
+        "desc": "FasterRCNN ResNet50, conf=0.65",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "resnet50", "--conf", "0.65"],
+    },
+    {
+        "name": "frcnn_r50_c075",
+        "desc": "FasterRCNN ResNet50, conf=0.75",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "resnet50", "--conf", "0.75"],
+    },
+
+    # -------------------------------------------------------------------------
+    # FasterRCNN MobileNet — best AssA so far (40.85); tune conf
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_mob_c055",
+        "desc": "FasterRCNN MobileNet, conf=0.55",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "mobilenet", "--conf", "0.55"],
+    },
+    {
+        "name": "frcnn_mob_c065",
+        "desc": "FasterRCNN MobileNet, conf=0.65",
+        "extra": [*BEST_SCT, "--detector", "fasterrcnn",
+                  "--fasterrcnn-backbone", "mobilenet", "--conf", "0.65"],
+    },
+]
+
+# ---------------------------------------------------------------------------
+# V6: FasterRCNN MobileNet fine-tuning
+#
+# Findings from V5:
+#   - frcnn_mob is the new best (IDF1=43.53, HOTA=31.49, AssA=42.77 at conf=0.65)
+#   - IDR curve: 35.33 (c=0.45) → 36.27 (c=0.55) → 34.60 (c=0.65)
+#     Peak IDR is at c=0.55 but IDF1 is nearly identical → find exact peak with c=0.60
+#   - AssA keeps improving with higher conf (cleaner crops → better ReID)
+#   - min_frames not yet tested with frcnn_mob → worth trying to raise AssA further
+# ---------------------------------------------------------------------------
+
+BEST_FRCNN = [
+    "--detector", "fasterrcnn",
+    "--fasterrcnn-backbone", "mobilenet",
+    "--tracker", "max_overlap",
+    "--iou-threshold", "0.30",
+    "--max-age", "10",
+    "--n-crops", "10",
+]
+
+EXPERIMENTS: list[dict] = [
+    # -------------------------------------------------------------------------
+    # Confidence fine-tuning: find the peak between 0.55 and 0.70
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_mob_c060",
+        "desc": "FasterRCNN MobileNet, conf=0.60, min3",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.60"],
+    },
+    {
+        "name": "frcnn_mob_c070",
+        "desc": "FasterRCNN MobileNet, conf=0.70, min3",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.70"],
+    },
+    {
+        "name": "frcnn_mob_c075",
+        "desc": "FasterRCNN MobileNet, conf=0.75, min3",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.75"],
+    },
+
+    # -------------------------------------------------------------------------
+    # min_frames sweep at best conf candidates
+    # Higher min_frames → shorter tracklets pruned → cleaner ReID features
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_mob_c055_min5",
+        "desc": "FasterRCNN MobileNet, conf=0.55, min5",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "5", "--conf", "0.55"],
+    },
+    {
+        "name": "frcnn_mob_c065_min5",
+        "desc": "FasterRCNN MobileNet, conf=0.65, min5",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "5", "--conf", "0.65"],
+    },
+    {
+        "name": "frcnn_mob_c060_min5",
+        "desc": "FasterRCNN MobileNet, conf=0.60, min5",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "5", "--conf", "0.60"],
+    },
+
+    # -------------------------------------------------------------------------
+    # Best combo + more crops (15) — richer mean ReID feature per tracklet
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_mob_c065_crops15",
+        "desc": "FasterRCNN MobileNet, conf=0.65, min3, crops=15",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.65",
+                  "--n-crops", "15"],
+    },
+
+    # -------------------------------------------------------------------------
+    # Clustering threshold fine-tune around the new best detector
+    # (was tuned for YOLOv10s; frcnn_mob may have a different sweet spot)
+    # -------------------------------------------------------------------------
+    {
+        "name": "frcnn_mob_c065_t050",
+        "desc": "FasterRCNN MobileNet, conf=0.65, min3, t=0.50",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.65",
+                  "--distance-threshold", "0.50"],
+    },
+    {
+        "name": "frcnn_mob_c065_t060",
+        "desc": "FasterRCNN MobileNet, conf=0.65, min3, t=0.60",
+        "extra": [*BEST_FRCNN, "--min-track-frames", "3", "--conf", "0.65",
+                  "--distance-threshold", "0.60"],
+    },
+]
+
+# ---------------------------------------------------------------------------
+# V8: Calibrated geo_scale sweep
+#
+# world_space_diagnostic.py on S01 measured:
+#   same-vehicle mean world distance = 0.000130° (≈14m in GPS degrees)
+#   same-vehicle p95                 = 0.000479°
+#   different-vehicle p5             = 0.000117°
+#
+# With geo_scale=1.0 (default), d/geo_scale ≈ 0.0001 → cost ≈ 0 → useless.
+# With geo_scale=0.000130, d/geo_scale ≈ 1.0 at the mean same-vehicle
+# separation → meaningful soft cost.
+#
+# Base: frcnn-mob best (conf=0.65, min5, t=0.55) — S01 best config.
+# Sweep: w_geo in {0.1, 0.2, 0.3, 0.5} × geo_scale in {0.000065, 0.000130, 0.000260}
+# ---------------------------------------------------------------------------
+
+BEST_S01 = [
+    "--detector", "fasterrcnn",
+    "--fasterrcnn-backbone", "mobilenet",
+    "--tracker", "max_overlap",
+    "--iou-threshold", "0.30",
+    "--max-age", "10",
+    "--n-crops", "10",
+    "--conf", "0.65",
+    "--min-track-frames", "5",
+]
+
+EXPERIMENTS: list[dict] = [
+    # Reference with w_geo=0 so results are self-contained in this output dir
+    {
+        "name": "geo_ref",
+        "desc": "frcnn-mob best, w_geo=0 (reference)",
+        "extra": [*BEST_S01, "--w-geo", "0.0"],
+    },
+
+    # -------------------------------------------------------------------------
+    # geo_scale = same_p50 (0.000078°, ≈8.7m) — tighter scale, harsher penalty
+    # -------------------------------------------------------------------------
+    {
+        "name": "geo_s065_w01",
+        "desc": "geo_scale=0.000065, w_geo=0.1",
+        "extra": [*BEST_S01, "--w-geo", "0.1", "--geo-scale", "0.000065"],
+    },
+    {
+        "name": "geo_s065_w02",
+        "desc": "geo_scale=0.000065, w_geo=0.2",
+        "extra": [*BEST_S01, "--w-geo", "0.2", "--geo-scale", "0.000065"],
+    },
+    {
+        "name": "geo_s065_w03",
+        "desc": "geo_scale=0.000065, w_geo=0.3",
+        "extra": [*BEST_S01, "--w-geo", "0.3", "--geo-scale", "0.000065"],
+    },
+
+    # -------------------------------------------------------------------------
+    # geo_scale = same_mean (0.000130°, ≈14m) — calibrated to data mean
+    # -------------------------------------------------------------------------
+    {
+        "name": "geo_s130_w01",
+        "desc": "geo_scale=0.000130 (same_mean), w_geo=0.1",
+        "extra": [*BEST_S01, "--w-geo", "0.1", "--geo-scale", "0.000130"],
+    },
+    {
+        "name": "geo_s130_w02",
+        "desc": "geo_scale=0.000130 (same_mean), w_geo=0.2",
+        "extra": [*BEST_S01, "--w-geo", "0.2", "--geo-scale", "0.000130"],
+    },
+    {
+        "name": "geo_s130_w03",
+        "desc": "geo_scale=0.000130 (same_mean), w_geo=0.3",
+        "extra": [*BEST_S01, "--w-geo", "0.3", "--geo-scale", "0.000130"],
+    },
+    {
+        "name": "geo_s130_w05",
+        "desc": "geo_scale=0.000130 (same_mean), w_geo=0.5",
+        "extra": [*BEST_S01, "--w-geo", "0.5", "--geo-scale", "0.000130"],
+    },
+
+    # -------------------------------------------------------------------------
+    # geo_scale = same_p95 (0.000479°, ≈53m) — looser scale, gentler penalty
+    # -------------------------------------------------------------------------
+    {
+        "name": "geo_s479_w02",
+        "desc": "geo_scale=0.000479 (same_p95), w_geo=0.2",
+        "extra": [*BEST_S01, "--w-geo", "0.2", "--geo-scale", "0.000479"],
+    },
+    {
+        "name": "geo_s479_w03",
+        "desc": "geo_scale=0.000479 (same_p95), w_geo=0.3",
+        "extra": [*BEST_S01, "--w-geo", "0.3", "--geo-scale", "0.000479"],
+    },
+    {
+        "name": "geo_s479_w05",
+        "desc": "geo_scale=0.000479 (same_p95), w_geo=0.5",
+        "extra": [*BEST_S01, "--w-geo", "0.5", "--geo-scale", "0.000479"],
+    },
+]
+
+# ---------------------------------------------------------------------------
 # Metric parsing
 # ---------------------------------------------------------------------------
 

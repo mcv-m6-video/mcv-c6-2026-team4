@@ -67,8 +67,18 @@ class ClusteringAssociator:
     w_geo:
         Weight for the geometric cost component.
     geo_scale:
-        Normaliser for spatial distances (world units). Set to the expected
-        maximum meaningful distance between two positions of the same car.
+        Normaliser for spatial distances (world units). Used only in the
+        sequential fallback branch (no temporal overlap). Set to the expected
+        maximum meaningful inter-position distance between endpoints of two
+        tracklets that could be the same car.
+    n_sigma:
+        Mahalanobis distance at which the co-temporal geo cost reaches 1.0
+        (i.e. the cost ceiling for the co-temporal branch).  A value of 3
+        means "three combined standard deviations apart = fully penalised".
+        Lower values penalise spatial disagreement more aggressively.
+        Because Mahalanobis distance is normalised by per-point uncertainty
+        propagated through each camera's homography Jacobian, this parameter
+        is sequence-agnostic — no per-sequence calibration required.
     v_max:
         Maximum vehicle speed in world units per second. Used for the
         speed-consistency cost on sequential cross-camera pairs.
@@ -95,6 +105,7 @@ class ClusteringAssociator:
         w_reid: float = 1.0,
         w_geo: float = 0.0,
         geo_scale: float = 1.0,
+        n_sigma: float = 3.0,
         v_max: float = 30.0,
         same_camera_max_gap: float = 5.0,
         min_overlap_secs: float = 1.0,
@@ -106,6 +117,7 @@ class ClusteringAssociator:
         self.w_reid = w_reid
         self.w_geo = w_geo
         self.geo_scale = geo_scale
+        self.n_sigma = n_sigma
         self.v_max = v_max
         self.same_camera_max_gap = same_camera_max_gap
         self.min_overlap_secs = min_overlap_secs
@@ -115,7 +127,12 @@ class ClusteringAssociator:
     # ------------------------------------------------------------------
     # Public API
 
-    def associate(self, world_tracks: list[WorldTrack]) -> list[GlobalTrack]:
+    def associate(
+        self,
+        world_tracks: list[WorldTrack],
+        plot_cost: bool = False,
+        plot_path: str | None = None,
+    ) -> list[GlobalTrack]:
         n = len(world_tracks)
         if n == 0:
             return []
@@ -159,6 +176,9 @@ class ClusteringAssociator:
                 linkage=self.linkage,
             )
             labels = model.fit_predict(finite_cost)
+
+        if plot_cost:
+            self._plot_cost_matrix(cost, labels, plot_path)
 
         clusters: dict[int, list[WorldTrack]] = defaultdict(list)
         for wt, label in zip(world_tracks, labels):
@@ -250,10 +270,12 @@ class ClusteringAssociator:
 
         if overlap_dur >= self.min_overlap_secs:
             # Co-temporal regime: two cameras observe the car simultaneously.
-            # Mean world-distance at sampled timestamps is a direct measure of
-            # whether both tracklets project to the same physical location.
+            # Mean Mahalanobis distance at sampled timestamps measures whether
+            # both tracklets project to the same physical location relative to
+            # the combined homography uncertainty of each camera pair.
+            # A value of 1 = within the noise floor; n_sigma = cost ceiling.
             d = self._co_temporal_dist(wt_i, wt_j, overlap_start, overlap_end)
-            return min(d / max(self.geo_scale, 1e-9), 1.0)
+            return min(d / max(self.n_sigma, 1e-9), 1.0)
 
         # Sequential / near-simultaneous handoff: determine direction.
         if t_i1 <= t_j0:
@@ -286,6 +308,53 @@ class ClusteringAssociator:
         return min(d / max(self.geo_scale, 1e-9), 1.0)
 
     # ------------------------------------------------------------------
+    # Visualisation
+
+    @staticmethod
+    def _plot_cost_matrix(
+        cost: np.ndarray,
+        labels: np.ndarray,
+        save_path: str | None = None,
+    ) -> None:
+        import matplotlib
+        matplotlib.use("Agg")
+        import matplotlib.pyplot as plt
+
+        # Reorder rows/cols so tracks in the same cluster are contiguous
+        # → clusters appear as blocks on the diagonal.
+        order = np.argsort(labels, kind="stable")
+        sorted_cost = cost[np.ix_(order, order)]
+
+        display = sorted_cost.astype(float)
+
+        fig_px = min(1600, max(600, len(labels) * 4))
+        fig_in = fig_px / 100
+        fig, ax = plt.subplots(figsize=(fig_in, fig_in))
+
+        # Clip inf to 1.0 — all finite costs are in [0, 1] by construction,
+        # so blocked pairs simply render as worst-cost red with no visual noise.
+        display = np.clip(display, 0.0, 1.0)
+
+        im = ax.imshow(display, cmap="RdBu_r", vmin=0, vmax=1,
+                       aspect="equal", interpolation="nearest")
+
+        cbar = fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+        cbar.set_label("cost  (blue = compatible, red = incompatible / blocked)", fontsize=8)
+
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title("Pairwise cost matrix — sorted by cluster", fontsize=9)
+
+        fig.tight_layout()
+        if save_path:
+            fig.savefig(save_path, dpi=100, bbox_inches="tight")
+            print(f"  Cost matrix saved → {save_path}")
+        else:
+            fig.savefig("cost_matrix.png", dpi=100, bbox_inches="tight")
+            print("  Cost matrix saved → cost_matrix.png")
+        plt.close(fig)
+
+    # ------------------------------------------------------------------
     # Helpers
 
     def _co_temporal_dist(
@@ -296,12 +365,18 @@ class ClusteringAssociator:
         t_end: float,
     ) -> float:
         """
-        Mean Euclidean world-space distance between the two tracklets at
+        Mean Mahalanobis world-space distance between the two tracklets at
         n_overlap_samples evenly spaced timestamps within [t_start, t_end].
 
-        Uses WorldTrack.position_at() for linear interpolation. Returns inf
-        if no valid position pairs can be obtained (e.g. single-observation
-        tracks that do not support interpolation).
+        Uses WorldTrack.position_at() for linear interpolation and
+        WorldPoint.mahalanobis_dist() for the distance, which normalises by
+        the combined per-point uncertainty propagated from each camera's
+        homography Jacobian.  A value of ~1 means "within the noise floor of
+        the homography"; values well above n_sigma indicate clearly different
+        physical locations.
+
+        Returns inf if no valid position pairs can be obtained (e.g.
+        single-observation tracks that do not support interpolation).
         """
         times = np.linspace(t_start, t_end, self.n_overlap_samples)
         dists = []
@@ -309,7 +384,7 @@ class ClusteringAssociator:
             pi = wt_i.position_at(float(t))
             pj = wt_j.position_at(float(t))
             if pi is not None and pj is not None:
-                dists.append(np.linalg.norm(pi.as_array() - pj.as_array()))
+                dists.append(pi.mahalanobis_dist(pj))
         return float(np.mean(dists)) if dists else np.inf
 
     @staticmethod

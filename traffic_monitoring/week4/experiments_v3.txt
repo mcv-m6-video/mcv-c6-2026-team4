@@ -1,0 +1,272 @@
+python3 run_experiments.py
+Running 10 experiment(s)  →  output/experiments/
+Started: 2026-03-18 12:06:04
+
+============================================================
+  RUN: v3_ref
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/v3_ref --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.45 --max-age 10 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/v3_ref/S01_predictions.txt
+    51882 raw detection-level rows  |  212 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.29 49.22 34.10 29.02 23.15 36.61
+  
+  Summary:
+    IDF1  :  40.29
+    IDP   :  49.22
+    IDR   :  34.10
+    MOTA  :  13.83
+    HOTA  :  29.02
+  
+  Building world-map background …
+  Precomputing fused positions for 212 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/v3_ref/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: age20
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/age20 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.45 --max-age 20 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/age20/S01_predictions.txt
+    51988 raw detection-level rows  |  206 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.38 48.03 33.37 28.18 22.69 35.13
+  
+  Summary:
+    IDF1  :  39.38
+    IDP   :  48.03
+    IDR   :  33.37
+    MOTA  :  13.47
+    HOTA  :  28.18
+  
+  Building world-map background …
+  Precomputing fused positions for 206 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/age20/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: age35
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/age35 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.45 --max-age 35 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/age35/S01_predictions.txt
+    52207 raw detection-level rows  |  219 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.57 46.76 32.82 28.26 22.91 35.00
+  
+  Summary:
+    IDF1  :  38.57
+    IDP   :  46.76
+    IDR   :  32.82
+    MOTA  :  13.15
+    HOTA  :  28.26
+  
+  Building world-map background …
+  Precomputing fused positions for 219 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/age35/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: iou030
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/iou030 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/iou030/S01_predictions.txt
+    53089 raw detection-level rows  |  200 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.85 48.90 35.07 29.68 23.69 37.40
+  
+  Summary:
+    IDF1  :  40.85
+    IDP   :  48.90
+    IDR   :  35.07
+    MOTA  :  14.06
+    HOTA  :  29.68
+  
+  Building world-map background …
+  Precomputing fused positions for 200 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/iou030/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: iou015
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/iou015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.15 --max-age 10 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/iou015/S01_predictions.txt
+    53328 raw detection-level rows  |  200 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.47 46.50 34.29 28.53 23.24 35.24
+  
+  Summary:
+    IDF1  :  39.47
+    IDP   :  46.50
+    IDR   :  34.29
+    MOTA  :  11.82
+    HOTA  :  28.53
+  
+  Building world-map background …
+  Precomputing fused positions for 200 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/iou015/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: iou015_age35
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/iou015_age35 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.15 --max-age 35 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/iou015_age35/S01_predictions.txt
+    53517 raw detection-level rows  |  186 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 38.20 45.33 33.00 28.65 24.26 34.08
+  
+  Summary:
+    IDF1  :  38.20
+    IDP   :  45.33
+    IDR   :  33.00
+    MOTA  :  15.67
+    HOTA  :  28.65
+  
+  Building world-map background …
+  Precomputing fused positions for 186 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/iou015_age35/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: iou030_age20
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/iou030_age20 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 20 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/iou030_age20/S01_predictions.txt
+    53180 raw detection-level rows  |  187 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.24 46.58 33.90 28.80 23.55 35.37
+  
+  Summary:
+    IDF1  :  39.24
+    IDP   :  46.58
+    IDR   :  33.90
+    MOTA  :  13.88
+    HOTA  :  28.80
+  
+  Building world-map background …
+  Precomputing fused positions for 187 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/iou030_age20/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: iou015_age35_min5
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/iou015_age35_min5 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.15 --max-age 35 --min-track-frames 5 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/iou015_age35_min5/S01_predictions.txt
+    53264 raw detection-level rows  |  159 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 39.94 47.55 34.44 29.29 24.24 35.60
+  
+  Summary:
+    IDF1  :  39.94
+    IDP   :  47.55
+    IDR   :  34.44
+    MOTA  :  15.73
+    HOTA  :  29.29
+  
+  Building world-map background …
+  Precomputing fused positions for 159 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/iou015_age35_min5/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: sort_iou015_age35
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/sort_iou015_age35 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker sort --iou-threshold 0.15 --max-age 35 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/sort_iou015_age35/S01_predictions.txt
+    53688 raw detection-level rows  |  203 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 35.29 42.17 30.34 26.99 23.88 30.85
+  
+  Summary:
+    IDF1  :  35.29
+    IDP   :  42.17
+    IDR   :  30.34
+    MOTA  :  14.21
+    HOTA  :  26.99
+  
+  Building world-map background …
+  Precomputing fused positions for 203 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/sort_iou015_age35/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: sort_iou030_age20
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/sort_iou030_age20 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker sort --iou-threshold 0.30 --max-age 20 --min-track-frames 3 --n-crops 10
+============================================================
+  Predictions saved → output/experiments/sort_iou030_age20/S01_predictions.txt
+    53440 raw detection-level rows  |  216 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 37.69 45.11 32.36 28.19 23.54 34.08
+  
+  Summary:
+    IDF1  :  37.69
+    IDP   :  45.11
+    IDR   :  32.36
+    MOTA  :  13.18
+    HOTA  :  28.19
+  
+  Building world-map background …
+  Precomputing fused positions for 216 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/sort_iou030_age20/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+SUMMARY
+============================================================
+Name                        IDF1    IDP    IDR   HOTA   DetA   AssA
+-------------------------------------------------------------------
+v3_ref                    40.29% 49.22% 34.10% 29.02%      —      —
+age20                     39.38% 48.03% 33.37% 28.18%      —      —
+age35                     38.57% 46.76% 32.82% 28.26%      —      —
+iou030                    40.85% 48.90% 35.07% 29.68%      —      —
+iou015                    39.47% 46.50% 34.29% 28.53%      —      —
+iou015_age35              38.20% 45.33% 33.00% 28.65%      —      —
+iou030_age20              39.24% 46.58% 33.90% 28.80%      —      —
+iou015_age35_min5         39.94% 47.55% 34.44% 29.29%      —      —
+sort_iou015_age35         35.29% 42.17% 30.34% 26.99%      —      —
+sort_iou030_age20         37.69% 45.11% 32.36% 28.19%      —      —
+
+Results saved → output/experiments/results.csv  |  output/experiments/results.md
+Finished: 2026-03-18 12:25:06

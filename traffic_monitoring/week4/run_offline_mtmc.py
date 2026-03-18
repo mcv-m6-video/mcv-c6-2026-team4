@@ -21,7 +21,7 @@ import argparse
 from pathlib import Path
 
 import matplotlib
-matplotlib.use("Agg")   # headless-safe; switch to "TkAgg" / "Qt5Agg" for interactive
+matplotlib.use("TkAgg")   # headless-safe; switch to "TkAgg" / "Qt5Agg" for interactive
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
@@ -30,12 +30,13 @@ if not hasattr(np, "asfarray"):          # removed in NumPy 2.0, needed by motme
 import pandas as pd
 import torch
 from tqdm import tqdm
-from ultralytics import YOLO
+from ultralytics import YOLO, RTDETR
 
 from offline_multicamera_tracking import OfflineMulticameraTracker
 from src.camera_graph import CameraGraph
 from src.clustering_associator import ClusteringAssociator
 from src.dataset import AICityDataset
+from src.detector import CAR_CLASS_BY_DETECTOR, FasterRCNNDetector
 from src.multi_camera_associator import CombinedAssociator, GlobalTrack
 from src.reid_feature_extractor import ColorHistogramExtractor, FtNetExtractor
 from src.single_camera_tracker import MaxOverlapTracker, SORTTracker
@@ -67,8 +68,22 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--seq", default=SEQ_ID, help="Sequence id, e.g. S01")
     p.add_argument("--cameras", nargs="+", default=CAMERAS)
 
+    # Detector
+    p.add_argument("--detector",
+                   choices=["yolo", "rtdetr", "fasterrcnn"],
+                   default="yolo",
+                   help="Detection backbone: 'yolo' (default), 'rtdetr', 'fasterrcnn'")
+    p.add_argument("--car-class", type=int, default=None,
+                   help="COCO class index for 'car'. Auto-selected per detector if not set. "
+                        "yolo=0, yolo_coco/rtdetr=2, fasterrcnn=3")
+    p.add_argument("--fasterrcnn-backbone", choices=["resnet50", "mobilenet"],
+                   default="resnet50",
+                   help="[fasterrcnn] Backbone variant")
+
     # Weights
     p.add_argument("--yolo-weights", default=YOLO_WEIGHTS)
+    p.add_argument("--rtdetr-weights", default="rtdetr-x.pt",
+                   help="[rtdetr] Ultralytics RT-DETR weights file (auto-downloaded if absent)")
     p.add_argument("--reid-weights", default=REID_WEIGHTS)
 
     # SCT
@@ -115,8 +130,12 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--w-geo", type=float, default=0.0,
                    help="[clustering] Weight for geometric cost")
     p.add_argument("--geo-scale", type=float, default=1.0,
-                   help="[clustering] Spatial normaliser (world units); set to expected "
-                        "max meaningful inter-position distance")
+                   help="[clustering] Spatial normaliser (world units) for the sequential "
+                        "fallback cost; set to expected max meaningful inter-position distance")
+    p.add_argument("--n-sigma", type=float, default=3.0,
+                   help="[clustering] Mahalanobis distance ceiling for the co-temporal "
+                        "geo cost: cost=1 when mean Mahalanobis distance equals this value. "
+                        "Tune down to penalise spatial disagreement more strongly.")
     p.add_argument("--same-camera-max-gap", type=float, default=5.0,
                    help="[clustering] Hard gate (s) for same-camera fragmentation repair; "
                         "pairs with a larger temporal gap are blocked")
@@ -167,6 +186,7 @@ def build_associator(args, graph):
             w_reid=args.w_reid,
             w_geo=args.w_geo,
             geo_scale=args.geo_scale,
+            n_sigma=args.n_sigma,
             v_max=args.v_max,
             same_camera_max_gap=args.same_camera_max_gap,
             min_overlap_secs=args.min_overlap_secs,
@@ -188,6 +208,33 @@ def build_associator(args, graph):
         debug_costs=args.debug_costs,
         sequential_cameras=args.cameras if args.sequential_cameras else None,
     )
+
+
+def build_detector(args, device):
+    """Instantiate the requested detector and return (detector, car_class)."""
+    det_type = args.detector
+
+    if det_type == "yolo":
+        detector = YOLO(args.yolo_weights)
+        default_car_class = CAR_CLASS_BY_DETECTOR["yolo"]
+
+    elif det_type == "rtdetr":
+        detector = RTDETR(args.rtdetr_weights)
+        default_car_class = CAR_CLASS_BY_DETECTOR["rtdetr"]
+
+    elif det_type == "fasterrcnn":
+        detector = FasterRCNNDetector(
+            backbone=args.fasterrcnn_backbone,
+            device=device,
+        )
+        default_car_class = CAR_CLASS_BY_DETECTOR["fasterrcnn"]
+
+    else:
+        raise ValueError(f"Unknown detector: {det_type}")
+
+    car_class = args.car_class if args.car_class is not None else default_car_class
+    print(f"Detector: {det_type}  |  car_class={car_class}")
+    return detector, car_class
 
 
 def build_tracker_factory(args):
@@ -220,8 +267,8 @@ def run_pipeline(args) -> list[GlobalTrack]:
         raise ValueError(f"No valid cameras found in sequence {args.seq} for {args.cameras}")
     print(f"Sequence {args.seq}: {[c.id for c in cameras]}")
 
-    print("Loading YOLO …")
-    detector = YOLO(args.yolo_weights)
+    print(f"Loading detector ({args.detector}) …")
+    detector, car_class = build_detector(args, device)
 
     print(f"Building feature extractor ({args.extractor}) …")
     extractor = build_feature_extractor(args, device)
@@ -247,6 +294,7 @@ def run_pipeline(args) -> list[GlobalTrack]:
         feature_extractor=extractor,
         confidence=args.conf,
         min_track_frames=args.min_track_frames,
+        car_class=car_class,
     )
 
     print("\nRunning per-camera tracking …")

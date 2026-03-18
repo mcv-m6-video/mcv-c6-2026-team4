@@ -11,9 +11,6 @@ from src.world_and_camera_tracking import ContactPoint, ContactPointFn, WorldTra
 from src.multi_camera_associator import MultiCameraAssociator, GlobalTrack
 from src.reid_feature_extractor import FeatureExtractor, compute_features
 
-CAR_CLASS = 0
-
-
 class OfflineMulticameraTracker:
     """
     Full offline multi-camera tracking pipeline:
@@ -51,6 +48,7 @@ class OfflineMulticameraTracker:
         feature_extractor: FeatureExtractor | None = None,
         confidence: float = 0.45,
         min_track_frames: int = 1,
+        car_class: int = 0,
     ):
         self.tracker_factory = tracker_factory
         self.detector = detector
@@ -59,6 +57,7 @@ class OfflineMulticameraTracker:
         self.feature_extractor = feature_extractor
         self.confidence = confidence
         self.min_track_frames = min_track_frames
+        self.car_class = car_class
 
     # ------------------------------------------------------------------
 
@@ -79,7 +78,7 @@ class OfflineMulticameraTracker:
         if self.feature_extractor is not None:
             compute_features(all_world_tracks, self.feature_extractor)
 
-        return self.associator.associate(all_world_tracks)
+        return self.associator.associate(all_world_tracks, plot_cost=True) # FIXME: plot_costs ahs to be removed
 
     # ------------------------------------------------------------------
     # Internal steps
@@ -136,7 +135,7 @@ class OfflineMulticameraTracker:
         return roi_mask
 
     def _car_filter(self, boxes: Iterable[Any]) -> Iterable[Any]:
-        return (box for box in boxes if int(box.cls[0]) == CAR_CLASS)
+        return (box for box in boxes if int(box.cls[0]) == self.car_class)
 
     def _roi_filter(self, boxes: Iterable[Any], roi_mask) -> Iterable[Any]:
         if roi_mask is None:
