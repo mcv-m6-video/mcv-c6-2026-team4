@@ -27,11 +27,12 @@ OUTPUT_PRED_FILE = "mtmc_predictions.txt"
 YOLO_WEIGHTS = "./yolov10s_coco.pt"
 REID_WEIGHTS = "./src/net_19.pth"
 CAMERAS = ["c001", "c002", "c003", "c004", "c005"] 
-CAMERAS = ["c001", "c002", "c003", "c004", "c005"][::-1]
 
 # Hyperparameters
 CONF_THRESHOLD = 0.45
 IOU_THRESHOLD = 0.45
+CONF_THRESHOLD = 0.3
+IOU_THRESHOLD = 0.3
 MAX_AGE = 10              
 NUM_CROPS_PER_TRACK = 5  
 GLOBAL_MATCH_THRESH = 0.6 

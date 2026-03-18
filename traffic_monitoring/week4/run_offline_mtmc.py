@@ -34,6 +34,7 @@ from ultralytics import YOLO
 
 from offline_multicamera_tracking import OfflineMulticameraTracker
 from src.camera_graph import CameraGraph
+from src.clustering_associator import ClusteringAssociator
 from src.dataset import AICityDataset
 from src.multi_camera_associator import CombinedAssociator, GlobalTrack
 from src.reid_feature_extractor import ColorHistogramExtractor, FtNetExtractor
@@ -80,8 +81,16 @@ def _parse_args() -> argparse.Namespace:
     p.add_argument("--extractor", choices=["reid", "histogram"], default="reid",
                    help="'reid' uses ft_net; 'histogram' uses HSV histograms (no GPU needed)")
     p.add_argument("--n-crops", type=int, default=5)
+    p.add_argument("--min-track-frames", type=int, default=1,
+                   help="Drop single-camera tracklets shorter than this many observations "
+                        "before multi-camera association (reduces noise from spurious dets)")
 
-    # Association
+    # Association — strategy selector
+    p.add_argument("--associator", choices=["greedy", "clustering"], default="greedy",
+                   help="Association strategy: 'greedy' (CombinedAssociator, default) "
+                        "or 'clustering' (ClusteringAssociator, order-independent)")
+
+    # Greedy associator (CombinedAssociator) parameters
     p.add_argument("--w-appearance", type=float, default=1.0)
     p.add_argument("--w-spatial",    type=float, default=0.0)
     p.add_argument("--w-temporal",   type=float, default=0.0)
@@ -95,6 +104,27 @@ def _parse_args() -> argparse.Namespace:
                    help="Print per-pair cost breakdown during association (very verbose)")
     p.add_argument("--sequential-cameras", action="store_true",
                    help="Process cameras sequentially (like mtmc.py) instead of interleaved by timestamp")
+
+    # Clustering associator (ClusteringAssociator) parameters
+    p.add_argument("--distance-threshold", type=float, default=0.4,
+                   help="[clustering] Merge clusters below this linkage distance")
+    p.add_argument("--linkage", choices=["average", "complete", "single"], default="average",
+                   help="[clustering] Agglomerative linkage criterion")
+    p.add_argument("--w-reid", type=float, default=1.0,
+                   help="[clustering] Weight for ReID appearance cost")
+    p.add_argument("--w-geo", type=float, default=0.0,
+                   help="[clustering] Weight for geometric cost")
+    p.add_argument("--geo-scale", type=float, default=1.0,
+                   help="[clustering] Spatial normaliser (world units); set to expected "
+                        "max meaningful inter-position distance")
+    p.add_argument("--same-camera-max-gap", type=float, default=5.0,
+                   help="[clustering] Hard gate (s) for same-camera fragmentation repair; "
+                        "pairs with a larger temporal gap are blocked")
+    p.add_argument("--min-overlap-secs", type=float, default=1.0,
+                   help="[clustering] Minimum temporal overlap (s) to use co-temporal "
+                        "world-distance instead of speed-consistency cost")
+    p.add_argument("--n-overlap-samples", type=int, default=10,
+                   help="[clustering] Timestamps sampled during the overlap interval")
 
     # Camera connectivity graph
     p.add_argument("--camera-graph", action="store_true",
@@ -128,6 +158,37 @@ def _parse_args() -> argparse.Namespace:
 # ---------------------------------------------------------------------------
 # Pipeline
 # ---------------------------------------------------------------------------
+
+def build_associator(args, graph):
+    if args.associator == "clustering":
+        return ClusteringAssociator(
+            distance_threshold=args.distance_threshold,
+            linkage=args.linkage,
+            w_reid=args.w_reid,
+            w_geo=args.w_geo,
+            geo_scale=args.geo_scale,
+            v_max=args.v_max,
+            same_camera_max_gap=args.same_camera_max_gap,
+            min_overlap_secs=args.min_overlap_secs,
+            n_overlap_samples=args.n_overlap_samples,
+            camera_graph=graph,
+        )
+    # Default: greedy CombinedAssociator
+    return CombinedAssociator(
+        w_appearance=args.w_appearance,
+        w_spatial=args.w_spatial,
+        w_temporal=args.w_temporal,
+        w_velocity=args.w_velocity,
+        match_threshold=args.match_threshold,
+        same_camera_filter=not args.no_same_camera_filter,
+        camera_graph=graph,
+        feature_momentum=args.feature_momentum,
+        spatial_scale=args.spatial_scale,
+        temporal_scale=args.temporal_scale,
+        debug_costs=args.debug_costs,
+        sequential_cameras=args.cameras if args.sequential_cameras else None,
+    )
+
 
 def build_tracker_factory(args):
     def factory():
@@ -176,20 +237,7 @@ def run_pipeline(args) -> list[GlobalTrack]:
         )
         print(graph.summary())
 
-    associator = CombinedAssociator(
-        w_appearance=args.w_appearance,
-        w_spatial=args.w_spatial,
-        w_temporal=args.w_temporal,
-        w_velocity=args.w_velocity,
-        match_threshold=args.match_threshold,
-        same_camera_filter=not args.no_same_camera_filter,
-        camera_graph=graph,
-        feature_momentum=args.feature_momentum,
-        spatial_scale=args.spatial_scale,
-        temporal_scale=args.temporal_scale,
-        debug_costs=args.debug_costs,
-        sequential_cameras=args.cameras if args.sequential_cameras else None,
-    )
+    associator = build_associator(args, graph)
 
     tracker = OfflineMulticameraTracker(
         tracker_factory=build_tracker_factory(args),
@@ -198,6 +246,7 @@ def run_pipeline(args) -> list[GlobalTrack]:
         contact_strategy=ContactPoint.BOTTOM_CENTER,
         feature_extractor=extractor,
         confidence=args.conf,
+        min_track_frames=args.min_track_frames,
     )
 
     print("\nRunning per-camera tracking …")
@@ -428,11 +477,17 @@ def animate(
     track_color = {gid: palette[i % len(palette)] for i, gid in enumerate(track_ids)}
 
     # --------------- figure setup ---------------
-    fig, ax = plt.subplots(figsize=(12, 10))
-    ax.set_aspect("equal")
     xlim, ylim = _axis_limits(scatter)
+    # Size the figure to match the data aspect ratio so equal-aspect leaves no whitespace
+    _fig_w = 14.0
+    _data_aspect = (ylim[1] - ylim[0]) / max(xlim[1] - xlim[0], 1e-9)
+    _fig_h = max(4.0, _fig_w * _data_aspect)
+    fig, ax = plt.subplots(figsize=(_fig_w, _fig_h), dpi=150)
+    ax.set_aspect("equal")
     ax.set_xlim(*xlim)
     ax.set_ylim(*ylim)
+    ax.set_autoscale_on(False)
+    fig.tight_layout()
     ax.set_xlabel("World X (dataset units)", fontsize=9)
     ax.set_ylabel("World Y (dataset units)", fontsize=9)
     ax.grid(True, alpha=0.2, linestyle="--", linewidth=0.5)
@@ -503,26 +558,8 @@ def animate(
                              zorder=4)
             dynamic.append(dot)
 
-            # -- Velocity arrow: most recent raw velocity at or before t --
-            vx, vy = 0.0, 0.0
-            vel_entries = raw_velocities.get(gid, [])
-            past_vel = [(ts, vx_, vy_) for ts, vx_, vy_ in vel_entries if ts <= t]
-            if past_vel:
-                _, vx, vy = past_vel[-1]
-            speed = np.hypot(vx, vy)
-            if speed > 0:
-                q = ax.quiver(
-                    cx, cy, vx, vy,
-                    color=color, angles="xy", scale_units="xy", scale=1.0,
-                    width=0.003, headwidth=4, headlength=4,
-                    zorder=3,
-                )
-                dynamic.append(q)
-
-            # -- ID label + speed --
+            # -- ID label --
             label = f" {gid}"
-            if speed > 0:
-                label += f"\n {speed:.3f} u/s"
             txt = ax.text(
                 cx, cy, label,
                 fontsize=7, color=color, fontweight="bold",
@@ -544,9 +581,9 @@ def animate(
 
     print(f"Rendering {len(times)} frames …")
     try:
-        writer = animation.FFMpegWriter(fps=fps, bitrate=2000,
+        writer = animation.FFMpegWriter(fps=fps, bitrate=6000,
                                         extra_args=["-pix_fmt", "yuv420p"])
-        anim.save(str(mp4_path), writer=writer,
+        anim.save(str(mp4_path), writer=writer, dpi=150,
                   progress_callback=lambda i, n: print(f"  frame {i+1}/{n}", end="\r"))
         print(f"\nSaved → {mp4_path}")
     except Exception as e:

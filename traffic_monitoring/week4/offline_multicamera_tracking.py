@@ -8,7 +8,7 @@ from src import dataset
 from src.single_camera_tracker import SingleCameraTracker, Track
 from src.synced_video_source import SyncedCameraSource
 from src.world_and_camera_tracking import ContactPoint, ContactPointFn, WorldTrack, project_tracks
-from src.multi_camera_associator import CombinedAssociator, GlobalTrack
+from src.multi_camera_associator import MultiCameraAssociator, GlobalTrack
 from src.reid_feature_extractor import FeatureExtractor, compute_features
 
 CAR_CLASS = 0
@@ -46,10 +46,11 @@ class OfflineMulticameraTracker:
         self,
         tracker_factory: Callable[[], SingleCameraTracker],
         detector,
-        associator: CombinedAssociator,
+        associator: MultiCameraAssociator,
         contact_strategy: ContactPoint | ContactPointFn = ContactPoint.BOTTOM_CENTER,
         feature_extractor: FeatureExtractor | None = None,
         confidence: float = 0.45,
+        min_track_frames: int = 1,
     ):
         self.tracker_factory = tracker_factory
         self.detector = detector
@@ -57,6 +58,7 @@ class OfflineMulticameraTracker:
         self.contact_strategy = contact_strategy
         self.feature_extractor = feature_extractor
         self.confidence = confidence
+        self.min_track_frames = min_track_frames
 
     # ------------------------------------------------------------------
 
@@ -64,9 +66,15 @@ class OfflineMulticameraTracker:
         tracks_per_camera = self._track_per_camera(cameras)
         projected = self._project_tracks(cameras, tracks_per_camera)
 
-        all_world_tracks: list[WorldTrack] = list(
-            itertools.chain.from_iterable(projected.values())
-        )
+        all_world_tracks: list[WorldTrack] = [
+            wt
+            for wt in itertools.chain.from_iterable(projected.values())
+            if len(wt.world_observations) >= self.min_track_frames
+        ]
+
+        if self.min_track_frames > 1:
+            print(f"  Kept {len(all_world_tracks)} world tracks "
+                  f"(min_track_frames={self.min_track_frames})")
 
         if self.feature_extractor is not None:
             compute_features(all_world_tracks, self.feature_extractor)
