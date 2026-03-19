@@ -10,7 +10,6 @@ import cv2
 from ultralytics import YOLO
 
 # --- Custom AI City Imports ---
-# Adjust the path if your script is located somewhere else relative to 'src'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from src.evaluation import load_annotations
 from src.video_source import VideoPartSource
@@ -25,9 +24,8 @@ COCO_URLS = {
     "val_images": "http://images.cocodataset.org/zips/val2017.zip",
     "annotations": "http://images.cocodataset.org/annotations/annotations_trainval2017.zip"
 }
-# COCO IDs: 3=car, 6=bus, 8=truck. (We keep bus here for COCO if you still want it there, 
-# or you can remove 6 if you want NO buses anywhere). 
-TARGET_CLASSES = {3: "car", 8: "truck"} # Removed 6 (bus) based on your request
+# COCO IDs: 3=car, 8=truck. 
+TARGET_CLASSES = {3: "car", 8: "truck"} 
 YOLO_CLASS_ID = 0 # Merging them all into a single "vehicle" class
 
 # AI City Configuration
@@ -134,7 +132,7 @@ def process_aicity_split(video_source, gt_per_frame, split_name, seq_name="S03_c
                     label = getattr(bbox, 'label', '').lower()
                     name = getattr(bbox, 'name', '').lower()
                     
-                    # Exclude buses as requested
+                    # Exclude buses
                     if 'bus' in label or 'bus' in name:
                         continue
                     

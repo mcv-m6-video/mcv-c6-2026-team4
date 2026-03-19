@@ -5,7 +5,6 @@ import numpy as np
 from tqdm import tqdm
 from ultralytics import YOLO
 
-# Imports from your project structure
 from src.bounding_box import BoundingBox
 from src.multi_tracker import MultiTracker
 
@@ -61,8 +60,7 @@ def main():
     out = cv2.VideoWriter(OUTPUT_PATH, fourcc, fps, (width, height))
 
     current_frame_id = 1
-    
-    # Wrap the loop with tqdm
+
     pbar = tqdm(total=total_frames, desc="Tracking & Rendering")
 
     while True:
@@ -78,7 +76,7 @@ def main():
             if int(box.cls[0]) == CAR_CLASS:
                 x1, y1, x2, y2 = box.xyxy[0].cpu().numpy()
                 
-                # ROI Filtering logic from your reference pipeline
+                # ROI Filtering logic 
                 if roi_mask is not None:
                     ix1, iy1, ix2, iy2 = int(x1), int(y1), int(x2), int(y2)
                     h_mask, w_mask = roi_mask.shape
@@ -95,7 +93,7 @@ def main():
                         continue 
                         
                 conf = float(box.conf[0].cpu().numpy())
-                # Use your project's BoundingBox class directly
+
                 detections.append(BoundingBox(top=y1, bottom=y2, left=x1, right=x2, confidence=conf))
 
         # 2. Run Tracking
@@ -108,7 +106,7 @@ def main():
         for track_id, info in tracker.active_tracks.items():
             bbox = info["current_bbox"]
             
-            # Extract coordinates from your BoundingBox object
+            # Extract coordinates from BoundingBox object
             x1, y1 = int(bbox.left), int(bbox.top)
             x2, y2 = int(bbox.right), int(bbox.bottom)
             

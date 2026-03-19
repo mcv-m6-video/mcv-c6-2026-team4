@@ -16,7 +16,6 @@ def parse_mtmc_results(results_path, target_camera):
     """
     tracking_data = defaultdict(list)
     
-    # AI City results often map "c001" to the integer 1 in the camera_id column
     try:
         target_cam_int = int(target_camera.replace('c', ''))
     except ValueError:

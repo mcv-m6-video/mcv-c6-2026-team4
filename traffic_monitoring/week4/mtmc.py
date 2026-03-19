@@ -1,8 +1,11 @@
 import os
 import sys
+import traceback
 import cv2
 import torch
 import numpy as np
+if not hasattr(np, "asfarray"):    
+    np.asfarray = lambda a, dtype=float: np.asarray(a, dtype=dtype)
 from tqdm import tqdm
 import torchvision.transforms as T
 from ultralytics import YOLO
@@ -28,13 +31,15 @@ CAMERAS = ["c001", "c002", "c003", "c004", "c005"]
 # Hyperparameters
 CONF_THRESHOLD = 0.45
 IOU_THRESHOLD = 0.45
+CONF_THRESHOLD = 0.3
+IOU_THRESHOLD = 0.3
 MAX_AGE = 10              
 NUM_CROPS_PER_TRACK = 5  
 GLOBAL_MATCH_THRESH = 0.6 
 CAR_CLASS = 0
 # -----------------------------------
 
-WANDB=True
+WANDB=False
 
 def extract_reid_features(reid_model, transform, track_history, device):
     """Samples evenly spaced crops and extracts the average Re-ID feature."""
@@ -193,8 +198,6 @@ def main():
                     updated_feat = 0.8 * global_gallery[best_global_idx]["feature"] + 0.2 * signature
                     global_gallery[best_global_idx]["feature"] = updated_feat / np.linalg.norm(updated_feat)
                     
-                    # Optional: Update cam_id to the most recent camera if needed, 
-                    # but keeping the original cam_id check is safer for your assumption.
                 else:
                     # No high-confidence match found; treat as a new car
                     matched_global_id = next_global_id
@@ -224,15 +227,11 @@ def main():
     print("="*50)
     
     try:
-        # readData from your eval.py
         test_df = readData(GLOBAL_GT_PATH)
         pred_df = readData(OUTPUT_PRED_FILE)
         
-        # aicity_eval from your eval.py 
-        # (roidir is set to the base path so eval.py looks in "../data/AI_CITY_CHALLENGE_2022_TRAIN/train/S01/...")
         summary = aicity_eval(test_df, pred_df, mread=False, dstype="train/S01", roidir=AI_CITY_BASE_PATH)
         
-        # print_results from your eval.py
         print_results(summary, mread=False)
         results=get_results(summary)
         
@@ -242,6 +241,7 @@ def main():
         
     except Exception as e:
         print(f"Error during evaluation: {e}")
+        traceback.print_exc()
 
 if __name__ == "__main__":
     main()

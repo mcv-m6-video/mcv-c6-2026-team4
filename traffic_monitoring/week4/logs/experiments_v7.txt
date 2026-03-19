@@ -1,0 +1,402 @@
+python3 run_experiments_s03.py 
+Running 15 experiment(s) on S03  →  output/experiments_s03/
+Started: 2026-03-18 14:55:49
+
+============================================================
+  RUN: s03_ref_yolo
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/s03_ref_yolo --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.45 --min-track-frames 5
+============================================================
+  Predictions saved → output/experiments_s03/s03_ref_yolo/S03_predictions.txt
+    48671 raw detection-level rows  |  164 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 18.52 31.95 13.04 19.22 7.50 49.57
+  
+  Summary:
+    IDF1  :  18.52
+    IDP   :  31.95
+    IDR   :  13.04
+    MOTA  : -13.66
+    HOTA  :  19.22
+  
+  Building world-map background …
+  Precomputing fused positions for 164 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/s03_ref_yolo/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: s03_ref_frcnn
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/s03_ref_frcnn --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.65 --min-track-frames 5
+============================================================
+  Predictions saved → output/experiments_s03/s03_ref_frcnn/S03_predictions.txt
+    42962 raw detection-level rows  |  134 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 13.91 25.24 9.60 15.93 5.77 44.13
+  
+  Summary:
+    IDF1  :  13.91
+    IDP   :  25.24
+    IDR   :   9.60
+    MOTA  : -16.72
+    HOTA  :  15.93
+  
+  Building world-map background …
+  Precomputing fused positions for 134 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/s03_ref_frcnn/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c030_min1
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c030_min1 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.30 --min-track-frames 1
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c030_min1/S03_predictions.txt
+    58801 raw detection-level rows  |  371 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 13.05 16.44 10.82 15.95 6.26 40.94
+  
+  Summary:
+    IDF1  :  13.05
+    IDP   :  16.44
+    IDR   :  10.82
+    MOTA  : -38.72
+    HOTA  :  15.95
+  
+  Building world-map background …
+  Precomputing fused positions for 371 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c030_min1/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c035_min1
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c035_min1 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.35 --min-track-frames 1
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c035_min1/S03_predictions.txt
+    55037 raw detection-level rows  |  334 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 15.29 21.74 11.79 17.82 6.96 45.85
+  
+  Summary:
+    IDF1  :  15.29
+    IDP   :  21.74
+    IDR   :  11.79
+    MOTA  : -26.47
+    HOTA  :  17.82
+  
+  Building world-map background …
+  Precomputing fused positions for 334 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c035_min1/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c030_min3
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c030_min3 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.30 --min-track-frames 3
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c030_min3/S03_predictions.txt
+    58226 raw detection-level rows  |  234 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 15.09 22.22 11.43 17.84 6.91 46.19
+  
+  Summary:
+    IDF1  :  15.09
+    IDP   :  22.22
+    IDR   :  11.43
+    MOTA  : -24.35
+    HOTA  :  17.84
+  
+  Building world-map background …
+  Precomputing fused positions for 234 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c030_min3/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c035_min3
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c035_min3 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.35 --min-track-frames 3
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c035_min3/S03_predictions.txt
+    54527 raw detection-level rows  |  207 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 17.01 26.03 12.63 18.87 7.07 50.48
+  
+  Summary:
+    IDF1  :  17.01
+    IDP   :  26.03
+    IDR   :  12.63
+    MOTA  : -21.40
+    HOTA  :  18.87
+  
+  Building world-map background …
+  Precomputing fused positions for 207 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c035_min3/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c040_min3
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c040_min3 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.40 --min-track-frames 3
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c040_min3/S03_predictions.txt
+    51506 raw detection-level rows  |  193 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 16.44 26.61 11.89 18.30 7.35 45.85
+  
+  Summary:
+    IDF1  :  16.44
+    IDP   :  26.61
+    IDR   :  11.89
+    MOTA  : -17.26
+    HOTA  :  18.30
+  
+  Building world-map background …
+  Precomputing fused positions for 193 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c040_min3/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c035_min1
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c035_min1 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.35 --min-track-frames 1
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c035_min1/S03_predictions.txt
+    88698 raw detection-level rows  |  703 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 10.34 12.50 8.82 13.36 4.75 37.70
+  
+  Summary:
+    IDF1  :  10.34
+    IDP   :  12.50
+    IDR   :   8.82
+    MOTA  : -48.60
+    HOTA  :  13.36
+  
+  Building world-map background …
+  Precomputing fused positions for 703 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c035_min1/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c045_min1
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c045_min1 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.45 --min-track-frames 1
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c045_min1/S03_predictions.txt
+    68930 raw detection-level rows  |  514 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 11.00 15.01 8.68 13.98 5.16 37.97
+  
+  Summary:
+    IDF1  :  11.00
+    IDP   :  15.01
+    IDR   :   8.68
+    MOTA  : -35.81
+    HOTA  :  13.98
+  
+  Building world-map background …
+  Precomputing fused positions for 514 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c045_min1/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c045_min3
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c045_min3 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.45 --min-track-frames 3
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c045_min3/S03_predictions.txt
+    68370 raw detection-level rows  |  354 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 11.83 16.49 9.22 14.58 5.22 40.79
+  
+  Summary:
+    IDF1  :  11.83
+    IDP   :  16.49
+    IDR   :   9.22
+    MOTA  : -33.94
+    HOTA  :  14.58
+  
+  Building world-map background …
+  Precomputing fused positions for 354 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c045_min3/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c055_min3
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c055_min3 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.55 --min-track-frames 3
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c055_min3/S03_predictions.txt
+    53490 raw detection-level rows  |  235 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 13.49 21.01 9.94 15.64 5.41 45.28
+  
+  Summary:
+    IDF1  :  13.49
+    IDP   :  21.01
+    IDR   :   9.94
+    MOTA  : -25.90
+    HOTA  :  15.64
+  
+  Building world-map background …
+  Precomputing fused positions for 235 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c055_min3/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c030_min3_t065
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c030_min3_t065 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.30 --min-track-frames 3 --distance-threshold 0.65
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c030_min3_t065/S03_predictions.txt
+    58226 raw detection-level rows  |  165 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 14.32 16.69 12.53 16.46 6.09 44.60
+  
+  Summary:
+    IDF1  :  14.32
+    IDP   :  16.69
+    IDR   :  12.53
+    MOTA  : -47.22
+    HOTA  :  16.46
+  
+  Building world-map background …
+  Precomputing fused positions for 165 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c030_min3_t065/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: yolo_c030_min3_t070
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/yolo_c030_min3_t070 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector yolo --yolo-weights yolov10s_coco.pt --conf 0.30 --min-track-frames 3 --distance-threshold 0.70
+============================================================
+  Predictions saved → output/experiments_s03/yolo_c030_min3_t070/S03_predictions.txt
+    58226 raw detection-level rows  |  139 global IDs  |  6 cameras
+  
+            idf1   idp   idr  hota deta  assa
+  MultiCam 14.23 16.47 12.53 16.39 6.04 44.56
+  
+  Summary:
+    IDF1  :  14.23
+    IDP   :  16.47
+    IDR   :  12.53
+    MOTA  : -48.26
+    HOTA  :  16.39
+  
+  Building world-map background …
+  Precomputing fused positions for 139 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/yolo_c030_min3_t070/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c045_min3_t065
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c045_min3_t065 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.45 --min-track-frames 3 --distance-threshold 0.65
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c045_min3_t065/S03_predictions.txt
+    68370 raw detection-level rows  |  246 global IDs  |  6 cameras
+  
+           idf1   idp  idr  hota deta  assa
+  MultiCam 9.70 10.25 9.21 12.64 4.23 37.82
+  
+  Summary:
+    IDF1  :   9.70
+    IDP   :  10.25
+    IDR   :   9.21
+    MOTA  : -67.84
+    HOTA  :  12.64
+  
+  Building world-map background …
+  Precomputing fused positions for 246 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c045_min3_t065/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_c045_min3_t070
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments_s03/frcnn_c045_min3_t070 --seq S03 --cameras c010 c011 c012 c013 c014 c015 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --n-crops 10 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --tracker max_overlap --iou-threshold 0.30 --max-age 10 --min-track-frames 5 --distance-threshold 0.55 --conf 0.45 --detector fasterrcnn --fasterrcnn-backbone mobilenet --conf 0.45 --min-track-frames 3 --distance-threshold 0.70
+============================================================
+  Predictions saved → output/experiments_s03/frcnn_c045_min3_t070/S03_predictions.txt
+    68370 raw detection-level rows  |  216 global IDs  |  6 cameras
+  
+            idf1   idp  idr  hota deta  assa
+  MultiCam 10.08 10.45 9.72 12.59 4.54 34.99
+  
+  Summary:
+    IDF1  :  10.08
+    IDP   :  10.45
+    IDR   :   9.72
+    MOTA  : -69.27
+    HOTA  :  12.59
+  
+  Building world-map background …
+  Precomputing fused positions for 216 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments_s03/frcnn_c045_min3_t070/S03_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+SUMMARY (S03)
+============================================================
+Name                           IDF1    IDP    IDR   HOTA   DetA   AssA
+----------------------------------------------------------------------
+s03_ref_yolo                 18.52% 31.95% 13.04% 19.22%      —      —
+s03_ref_frcnn                13.91% 25.24%  9.60% 15.93%      —      —
+yolo_c030_min1               13.05% 16.44% 10.82% 15.95%      —      —
+yolo_c035_min1               15.29% 21.74% 11.79% 17.82%      —      —
+yolo_c030_min3               15.09% 22.22% 11.43% 17.84%      —      —
+yolo_c035_min3               17.01% 26.03% 12.63% 18.87%      —      —
+yolo_c040_min3               16.44% 26.61% 11.89% 18.30%      —      —
+frcnn_c035_min1              10.34% 12.50%  8.82% 13.36%      —      —
+frcnn_c045_min1              11.00% 15.01%  8.68% 13.98%      —      —
+frcnn_c045_min3              11.83% 16.49%  9.22% 14.58%      —      —
+frcnn_c055_min3              13.49% 21.01%  9.94% 15.64%      —      —
+yolo_c030_min3_t065          14.32% 16.69% 12.53% 16.46%      —      —
+yolo_c030_min3_t070          14.23% 16.47% 12.53% 16.39%      —      —
+frcnn_c045_min3_t065          9.70% 10.25%  9.21% 12.64%      —      —
+frcnn_c045_min3_t070         10.08% 10.45%  9.72% 12.59%      —      —
+
+Results → output/experiments_s03/results.csv  |  output/experiments_s03/results.md
+Finished: 2026-03-18 15:54:48

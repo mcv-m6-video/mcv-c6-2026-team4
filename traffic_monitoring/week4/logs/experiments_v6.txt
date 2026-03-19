@@ -1,0 +1,246 @@
+python3 run_experiments.py 
+Running 9 experiment(s)  →  output/experiments/
+Started: 2026-03-18 13:57:15
+
+============================================================
+  RUN: frcnn_mob_c060
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c060 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.60
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c060/S01_predictions.txt
+    45254 raw detection-level rows  |  299 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 44.22 57.47 35.94 31.66 23.29 43.14
+  
+  Summary:
+    IDF1  :  44.22
+    IDP   :  57.47
+    IDR   :  35.94
+    MOTA  :  17.93
+    HOTA  :  31.66
+  
+  Building world-map background …
+  Precomputing fused positions for 299 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c060/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c070
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c070 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.70
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c070/S01_predictions.txt
+    39676 raw detection-level rows  |  214 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 43.16 59.74 33.78 30.72 22.89 41.30
+  
+  Summary:
+    IDF1  :  43.16
+    IDP   :  59.74
+    IDR   :  33.78
+    MOTA  :  20.42
+    HOTA  :  30.72
+  
+  Building world-map background …
+  Precomputing fused positions for 214 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c070/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c075
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c075 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.75
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c075/S01_predictions.txt
+    36658 raw detection-level rows  |  185 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 40.70 58.72 31.14 29.30 22.56 38.14
+  
+  Summary:
+    IDF1  :  40.70
+    IDP   :  58.72
+    IDR   :  31.14
+    MOTA  :  21.43
+    HOTA  :  29.30
+  
+  Building world-map background …
+  Precomputing fused positions for 185 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c075/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c055_min5
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c055_min5 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 5 --conf 0.55
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c055_min5/S01_predictions.txt
+    47923 raw detection-level rows  |  255 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 44.13 56.24 36.32 31.73 24.24 41.67
+  
+  Summary:
+    IDF1  :  44.13
+    IDP   :  56.24
+    IDR   :  36.32
+    MOTA  :  19.70
+    HOTA  :  31.73
+  
+  Building world-map background …
+  Precomputing fused positions for 255 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c055_min5/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c065_min5
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c065_min5 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 5 --conf 0.65
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c065_min5/S01_predictions.txt
+    41630 raw detection-level rows  |  192 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 45.60 63.40 35.60 32.37 23.71 44.26
+  
+  Summary:
+    IDF1  :  45.60
+    IDP   :  63.40
+    IDR   :  35.60
+    MOTA  :  22.45
+    HOTA  :  32.37
+  
+  Building world-map background …
+  Precomputing fused positions for 192 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c065_min5/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c060_min5
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c060_min5 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 5 --conf 0.60
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c060_min5/S01_predictions.txt
+    44457 raw detection-level rows  |  222 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 44.74 58.65 36.17 31.77 23.41 43.19
+  
+  Summary:
+    IDF1  :  44.74
+    IDP   :  58.65
+    IDR   :  36.17
+    MOTA  :  18.75
+    HOTA  :  31.77
+  
+  Building world-map background …
+  Precomputing fused positions for 222 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c060_min5/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c065_crops15
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c065_crops15 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.65 --n-crops 15
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c065_crops15/S01_predictions.txt
+    42300 raw detection-level rows  |  252 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 43.57 58.60 34.68 31.87 23.23 43.84
+  
+  Summary:
+    IDF1  :  43.57
+    IDP   :  58.60
+    IDR   :  34.68
+    MOTA  :  19.65
+    HOTA  :  31.87
+  
+  Building world-map background …
+  Precomputing fused positions for 252 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c065_crops15/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c065_t050
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c065_t050 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.65 --distance-threshold 0.50
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c065_t050/S01_predictions.txt
+    42300 raw detection-level rows  |  293 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 43.64 61.94 33.68 31.19 23.26 41.90
+  
+  Summary:
+    IDF1  :  43.64
+    IDP   :  61.94
+    IDR   :  33.68
+    MOTA  :  22.39
+    HOTA  :  31.19
+  
+  Building world-map background …
+  Precomputing fused positions for 293 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c065_t050/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+  RUN: frcnn_mob_c065_t060
+  CMD: /home/arnau-marcos-almansa/anaconda3/bin/python3 run_offline_mtmc.py --output-dir output/experiments/frcnn_mob_c065_t060 --gt-path ../data/AI_CITY_CHALLENGE_2022_TRAIN/eval/ground_truth_train.txt --associator clustering --extractor reid --tracker sort --n-crops 5 --min-track-frames 1 --distance-threshold 0.55 --linkage average --w-reid 1.0 --w-geo 0.0 --max-frames 1 --detector fasterrcnn --fasterrcnn-backbone mobilenet --tracker max_overlap --iou-threshold 0.30 --max-age 10 --n-crops 10 --min-track-frames 3 --conf 0.65 --distance-threshold 0.60
+============================================================
+  Predictions saved → output/experiments/frcnn_mob_c065_t060/S01_predictions.txt
+    42300 raw detection-level rows  |  215 global IDs  |  5 cameras
+  
+            idf1   idp   idr  hota  deta  assa
+  MultiCam 43.39 58.22 34.58 31.28 23.17 42.31
+  
+  Summary:
+    IDF1  :  43.39
+    IDP   :  58.22
+    IDR   :  34.58
+    MOTA  :  19.41
+    HOTA  :  31.28
+  
+  Building world-map background …
+  Precomputing fused positions for 215 tracks × 1 steps …
+  Rendering 1 frames …
+    frame 1/1
+  Saved → output/experiments/frcnn_mob_c065_t060/S01_tracking.mp4
+  
+  Using cache found in /home/arnau-marcos-almansa/.cache/torch/hub/XingangPan_IBN-Net_master
+
+============================================================
+SUMMARY
+============================================================
+Name                        IDF1    IDP    IDR   HOTA   DetA   AssA
+-------------------------------------------------------------------
+frcnn_mob_c060            44.22% 57.47% 35.94% 31.66%      —      —
+frcnn_mob_c070            43.16% 59.74% 33.78% 30.72%      —      —
+frcnn_mob_c075            40.70% 58.72% 31.14% 29.30%      —      —
+frcnn_mob_c055_min5       44.13% 56.24% 36.32% 31.73%      —      —
+frcnn_mob_c065_min5       45.60% 63.40% 35.60% 32.37%      —      —
+frcnn_mob_c060_min5       44.74% 58.65% 36.17% 31.77%      —      —
+frcnn_mob_c065_crops15    43.57% 58.60% 34.68% 31.87%      —      —
+frcnn_mob_c065_t050       43.64% 61.94% 33.68% 31.19%      —      —
+frcnn_mob_c065_t060       43.39% 58.22% 34.58% 31.28%      —      —
+
+Results saved → output/experiments/results.csv  |  output/experiments/results.md
+Finished: 2026-03-18 14:28:05

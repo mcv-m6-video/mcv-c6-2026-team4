@@ -416,13 +416,13 @@ def eval(test, pred, **kwargs):
             tscams = df['CameraId'].unique()
             cid = tscams[0]
             roi = loadroi(cid)
-            height, width = roi.shape
+            height, width = roi.shape[:2]
             # Loop over objects and check for outliers
             for i, row in df.iterrows():
                 if row['CameraId'] != cid:
                     cid = row['CameraId']
                     roi = loadroi(cid)
-                    height, width = roi.shape
+                    height, width = roi.shape[:2]
                 if isROIOutlier(row, roi, height, width):
                     df.at[i, 'NotOutlier'] = False
                     
@@ -433,7 +433,7 @@ def eval(test, pred, **kwargs):
         df.sort_values(['CameraId', 'FrameId'], inplace=True)
         # Load ROI image
         roi = loadroi(cid)
-        height, width = roi.shape
+        height, width = roi.shape[:2]
         # Loop over objects and check for outliers
         for i, row in df.iterrows():
             if isROIOutlier(row, roi, height, width):

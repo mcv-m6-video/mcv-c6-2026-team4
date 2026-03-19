@@ -7,3 +7,5 @@ AICity_data
 *.json
 *.pth
 *.pt
+traffic_monitoring/week3/models/FlowFormerPlusPlus/viz_kitti/*
+traffic_monitoring/week4/wandb
