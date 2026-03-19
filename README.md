@@ -1,5 +1,7 @@
 # mcv-c6-2026-team4
 
+Link to the Google Slides Presentation -> [MTMC](https://docs.google.com/presentation/d/1GIh7ZsBZdk1gFRL0EqgLg5Hli3SCXq974R0326KX4UI/edit?usp=sharing)
+
 ## Authors
 
 - Marcos Almansa, Arnau
@@ -14,3 +16,5 @@
   - [README](traffic_monitoring/week2/README.md)
 - [Week 3](traffic_monitoring/week3/)
   - [README](traffic_monitoring/week3/README.md)
+- [Week 4](traffic_monitoring/week4/)
+  - [README](traffic_monitoring/week4/README.md)
