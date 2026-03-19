@@ -78,7 +78,8 @@ class OfflineMulticameraTracker:
         if self.feature_extractor is not None:
             compute_features(all_world_tracks, self.feature_extractor)
 
-        return self.associator.associate(all_world_tracks, plot_cost=True) # FIXME: plot_costs ahs to be removed
+        # return self.associator.associate(all_world_tracks, plot_cost=True) # FIXME: plot_costs ahs to be removed
+        return self.associator.associate(all_world_tracks)
 
     # ------------------------------------------------------------------
     # Internal steps

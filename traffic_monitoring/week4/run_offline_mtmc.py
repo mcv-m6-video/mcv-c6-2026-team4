@@ -19,6 +19,7 @@ python run_offline_mtmc.py --tracker sort
 
 import argparse
 from pathlib import Path
+import traceback
 
 import matplotlib
 matplotlib.use("TkAgg")   # headless-safe; switch to "TkAgg" / "Qt5Agg" for interactive
@@ -161,6 +162,8 @@ def _parse_args() -> argparse.Namespace:
                         "If provided, evaluates the tracker after running.")
 
     # Animation
+    p.add_argument("--no-anim", action="store_true",
+                   help="Skip animation/video rendering (faster, for batch experiments)")
     p.add_argument("--anim-dt",     type=float, default=0.5,
                    help="Real-time seconds between animation frames")
     p.add_argument("--anim-fps",    type=int,   default=10,
@@ -377,6 +380,7 @@ def evaluate(global_tracks: list[GlobalTrack], args, output_dir: Path) -> None:
         )
     except Exception as exc:
         print(f"[ERROR] Evaluation failed: {exc}")
+        traceback.print_exc()
         return
 
     print()
@@ -535,6 +539,7 @@ def animate(
     ax.set_xlim(*xlim)
     ax.set_ylim(*ylim)
     ax.set_autoscale_on(False)
+    ax.invert_yaxis()
     fig.tight_layout()
     ax.set_xlabel("World X (dataset units)", fontsize=9)
     ax.set_ylabel("World Y (dataset units)", fontsize=9)
@@ -656,6 +661,9 @@ def main():
 
     if args.gt_path:
         evaluate(global_tracks, args, output_dir)
+
+    if args.no_anim:
+        return
 
     animate(
         global_tracks,

@@ -251,6 +251,25 @@ def main() -> None:
     for cam_id, fps in fps_map.items():
         print(f"  {cam_id}: {fps:.1f} fps  (start_t={seq[cam_id].start_timestamp:.3f}s)")
 
+    # Compute metres-per-degree from the scene's approximate centre latitude.
+    # Project a corner pixel of each camera's ROI to world (lat, lon) and
+    # take the mean latitude as the reference — same approach as make_world_mosaic.py.
+    lats = []
+    for cam_id in args.cameras:
+        if cam_id not in seq.cameras:
+            continue
+        H_inv = np.linalg.inv(seq[cam_id].calibration.homography)
+        wx, wy = _project_point(H_inv, 0.0, 0.0)
+        lats.append(wx)   # homography maps to (lat, lon), x = lat
+    lat_ref   = float(np.mean(lats)) if lats else 37.0
+    M_PER_LAT = 111_320.0
+    M_PER_LON = 111_320.0 * np.cos(np.radians(lat_ref))
+    # Degrees→metres conversion for Euclidean distances in (lat, lon) space:
+    # use the RMS of both scales as a single scalar factor.
+    DEG_TO_M  = np.sqrt((M_PER_LAT ** 2 + M_PER_LON ** 2) / 2)
+    print(f"  lat_ref={lat_ref:.4f}°  →  1° ≈ {DEG_TO_M:.0f} m  "
+          f"(lat: {M_PER_LAT:.0f} m/°, lon: {M_PER_LON:.0f} m/°)")
+
     print("Loading GT and projecting to world …")
     gt = load_gt_world_positions(args.gt_path, args.cameras, seq, fps_map)
     print(f"  Multi-camera vehicles: {len(gt)}")
@@ -322,48 +341,61 @@ def main() -> None:
     same_arr = np.array(same_dists)
     diff_arr = np.array(diff_dists)
 
+    # Clip outliers at p99 for cleaner statistics
+    same_p99 = float(np.percentile(same_arr, 99))
+    diff_p99 = float(np.percentile(diff_arr, 99))
+    same_clean = same_arr[same_arr <= same_p99]
+    diff_clean = diff_arr[diff_arr <= diff_p99]
+
     print("\n" + "=" * 60)
     print("WORLD-SPACE DIAGNOSTIC RESULTS")
     print("=" * 60)
 
-    print(f"\nSame-vehicle, co-temporal ({len(same_arr)} pairs):")
-    print(f"  mean   = {same_arr.mean():.6f}")
-    print(f"  std    = {same_arr.std():.6f}")
-    print(f"  min    = {same_arr.min():.6f}  max = {same_arr.max():.6f}")
-    print(f"  p50    = {np.median(same_arr):.6f}")
-    print(f"  p90    = {np.percentile(same_arr, 90):.6f}")
-    print(f"  p95    = {np.percentile(same_arr, 95):.6f}")
-    print(f"  p99    = {np.percentile(same_arr, 99):.6f}")
+    def m(v):
+        return f"{v * DEG_TO_M:.2f} m"
 
-    print(f"\nDifferent-vehicle, co-temporal ({len(diff_arr)} pairs):")
-    print(f"  mean   = {diff_arr.mean():.6f}")
-    print(f"  std    = {diff_arr.std():.6f}")
-    print(f"  min    = {diff_arr.min():.6f}  max = {diff_arr.max():.6f}")
-    print(f"  p1     = {np.percentile(diff_arr, 1):.6f}")
-    print(f"  p5     = {np.percentile(diff_arr, 5):.6f}")
-    print(f"  p10    = {np.percentile(diff_arr, 10):.6f}")
-    print(f"  p50    = {np.median(diff_arr):.6f}")
+    print(f"\nSame-vehicle, co-temporal ({len(same_arr)} pairs, "
+          f"{len(same_arr)-len(same_clean)} outliers removed above p99={same_p99:.6f} / {m(same_p99)}):")
+    print(f"  mean   = {same_clean.mean():.6f}  ({m(same_clean.mean())})   raw: {same_arr.mean():.6f}  ({m(same_arr.mean())})")
+    print(f"  std    = {same_clean.std():.6f}  ({m(same_clean.std())})   raw: {same_arr.std():.6f}  ({m(same_arr.std())})")
+    print(f"  min    = {same_clean.min():.6f}  ({m(same_clean.min())})")
+    print(f"  max    = {same_clean.max():.6f}  ({m(same_clean.max())})")
+    print(f"  p50    = {np.median(same_clean):.6f}  ({m(np.median(same_clean))})")
+    print(f"  p90    = {np.percentile(same_clean, 90):.6f}  ({m(np.percentile(same_clean, 90))})")
+    print(f"  p95    = {np.percentile(same_clean, 95):.6f}  ({m(np.percentile(same_clean, 95))})")
+    print(f"  p99    = {same_p99:.6f}  ({m(same_p99)})")
 
-    # Suggested thresholds
-    same_threshold = float(np.percentile(same_arr, 95))
-    diff_threshold = float(np.percentile(diff_arr, 5))
+    print(f"\nDifferent-vehicle, co-temporal ({len(diff_arr)} pairs, "
+          f"{len(diff_arr)-len(diff_clean)} outliers removed above p99={diff_p99:.6f} / {m(diff_p99)}):")
+    print(f"  mean   = {diff_clean.mean():.6f}  ({m(diff_clean.mean())})   raw: {diff_arr.mean():.6f}  ({m(diff_arr.mean())})")
+    print(f"  std    = {diff_clean.std():.6f}  ({m(diff_clean.std())})   raw: {diff_arr.std():.6f}  ({m(diff_arr.std())})")
+    print(f"  min    = {diff_clean.min():.6f}  ({m(diff_clean.min())})")
+    print(f"  max    = {diff_clean.max():.6f}  ({m(diff_clean.max())})")
+    print(f"  p1     = {np.percentile(diff_clean, 1):.6f}  ({m(np.percentile(diff_clean, 1))})")
+    print(f"  p5     = {np.percentile(diff_clean, 5):.6f}  ({m(np.percentile(diff_clean, 5))})")
+    print(f"  p10    = {np.percentile(diff_clean, 10):.6f}  ({m(np.percentile(diff_clean, 10))})")
+    print(f"  p50    = {np.median(diff_clean):.6f}  ({m(np.median(diff_clean))})")
+
+    # Suggested thresholds computed on cleaned arrays
+    same_threshold = float(np.percentile(same_clean, 95))
+    diff_threshold = float(np.percentile(diff_clean, 5))
     gap = diff_threshold - same_threshold
 
-    print(f"\nSuggested thresholds:")
-    print(f"  SAME_THRESHOLD  (same_p95)  = {same_threshold:.6f}")
+    print(f"\nSuggested thresholds (computed on p99-clipped data):")
+    print(f"  SAME_THRESHOLD  (same_p95)  = {same_threshold:.6f}  ({m(same_threshold)})")
     print(f"    → merge if world distance < this (Tier-1 force merge)")
-    print(f"  DIFF_THRESHOLD  (diff_p5)   = {diff_threshold:.6f}")
+    print(f"  DIFF_THRESHOLD  (diff_p5)   = {diff_threshold:.6f}  ({m(diff_threshold)})")
     print(f"    → block if world distance > this (Tier-1 hard block)")
-    print(f"  Gap between thresholds      = {gap:.6f}")
+    print(f"  Gap between thresholds      = {gap:.6f}  ({m(abs(gap))})")
 
     if gap > 0:
         print(f"  → Clean separation: hard co-temporal gate will work well")
-        overlap_frac = np.mean(same_arr > diff_threshold) + np.mean(diff_arr < same_threshold)
+        overlap_frac = np.mean(same_clean > diff_threshold) + np.mean(diff_clean < same_threshold)
         print(f"  → Overlap fraction (both sides): {100*overlap_frac/2:.1f}%")
     else:
         print(f"  → OVERLAP between distributions (gap < 0)")
         print(f"  → Hard gate will make errors — homography may be too noisy")
-        print(f"  → Consider using soft cost instead (w_geo + geo_scale={same_arr.mean():.6f})")
+        print(f"  → Consider using soft cost instead (w_geo + geo_scale={same_clean.mean():.6f}  / {m(same_clean.mean())})")
 
     # Reprojection error context
     print(f"\nCamera reprojection errors:")
