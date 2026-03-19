@@ -1,0 +1,283 @@
+Create sweep with ID: byi2oi2p
+Sweep URL: https://wandb.ai/monsella-universitat-autonoma-de-barcelona/C6-Week3-Task2-Definitiu/sweeps/byi2oi2p
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 3312 bounding boxes for camera c001.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.2687  (DetA=0.1690, AssA=0.4323)
+  IDF1: 0.3294  (TP=2553, FP=9634, FN=759)
+  MOTA: -1.9390  (MOTP=0.7170)
+  FP=9264  FN=389  IDS=81
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.1808  (DetA=0.0778, AssA=0.4202)
+  IDF1: 0.1910  (TP=1792, FP=14878, FN=305)
+  MOTA: -6.1388  (MOTP=0.6722)
+  FP=14768  FN=195  IDS=7
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 6324 bounding boxes for camera c002.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 1192 bounding boxes for camera c011.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.4422  (DetA=0.3766, AssA=0.5221)
+  IDF1: 0.6372  (TP=5203, FP=4805, FN=1121)
+  MOTA: 0.2234  (MOTP=0.6802)
+  FP=4267  FN=583  IDS=61
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 6680 bounding boxes for camera c003.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.3661  (DetA=0.2780, AssA=0.4870)
+  IDF1: 0.4958  (TP=5084, FP=8745, FN=1596)
+  MOTA: -0.4259  (MOTP=0.6691)
+  FP=8288  FN=1139  IDS=98
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 6016 bounding boxes for camera c004.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.1104  (DetA=0.0483, AssA=0.2541)
+  IDF1: 0.0869  (TP=560, FP=11141, FN=632)
+  MOTA: -8.5428  (MOTP=0.6254)
+  FP=10927  FN=418  IDS=30
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 2060 bounding boxes for camera c012.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.3837  (DetA=0.2898, AssA=0.5155)
+  IDF1: 0.5274  (TP=4984, FP=7901, FN=1032)
+  MOTA: -0.3529  (MOTP=0.6997)
+  FP=7446  FN=577  IDS=116
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 12205 bounding boxes for camera c005.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.3989  (DetA=0.3797, AssA=0.4305)
+  IDF1: 0.5874  (TP=8169, FP=7441, FN=4036)
+  MOTA: 0.3855  (MOTP=0.6250)
+  FP=5341  FN=1936  IDS=223
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.0166  (DetA=0.0058, AssA=0.0501)
+  IDF1: 0.0108  (TP=49, FP=6969, FN=2011)
+  MOTA: -3.3592  (MOTP=0.8066)
+  FP=6969  FN=2011  IDS=0
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 1011 bounding boxes for camera c013.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.3349  (DetA=0.3414, AssA=0.3295)
+  IDF1: 0.4826  (TP=554, FP=731, FN=457)
+  MOTA: 0.1691  (MOTP=0.6632)
+  FP=532  FN=258  IDS=50
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 3569 bounding boxes for camera c014.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.4782  (DetA=0.3862, AssA=0.5925)
+  IDF1: 0.6821  (TP=3367, FP=2937, FN=202)
+  MOTA: 0.2250  (MOTP=0.6899)
+  FP=2747  FN=12  IDS=7
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---
+Loading RAFT Model...
+Loading Ground Truth...
+Loaded 19 bounding boxes for camera c015.
+Loading YOLO Model...
+--- PASS 1: Tracking ---
+
+Evaluating Tracking Performance...
+
+Identity Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+CLEAR Config:
+THRESHOLD            : 0.5                           
+PRINT_CONFIG         : True                          
+
+==================================================
+TRACKING METRICS (TrackEval)
+==================================================
+  HOTA: 0.0327  (DetA=0.0019, AssA=0.5562)
+  IDF1: 0.0050  (TP=19, FP=7510, FN=0)
+  MOTA: -394.2632  (MOTP=0.7500)
+  FP=7510  FN=0  IDS=0
+==================================================
+
+--- PASS 2: Generating Interpolated Video ---

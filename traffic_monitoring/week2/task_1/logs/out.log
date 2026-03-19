@@ -1,0 +1,37 @@
+Loading model: yolov10s_coco.pt
+Processing Video and Generating Outputs...
+creating index...
+index created!
+Loading and preparing results...
+DONE (t=0.13s)
+creating index...
+index created!
+Running per image evaluation...
+Evaluate annotation type *bbox*
+DONE (t=4.31s).
+Accumulating evaluation results...
+DONE (t=0.28s).
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.740
+ Average Precision  (AP) @[ IoU=0.50      | area=   all | maxDets=100 ] = 0.870
+ Average Precision  (AP) @[ IoU=0.75      | area=   all | maxDets=100 ] = 0.822
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.703
+ Average Precision  (AP) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.934
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=  1 ] = 0.098
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets= 10 ] = 0.794
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=   all | maxDets=100 ] = 0.809
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= small | maxDets=100 ] = -1.000
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area=medium | maxDets=100 ] = 0.777
+ Average Recall     (AR) @[ IoU=0.50:0.95 | area= large | maxDets=100 ] = 0.955
+AP = 0.7403267823148996
+AP50 = 0.8704863547239274
+AP75 = 0.8220134152242844
+AP_small = -1.0
+AP_medium = 0.7033890763390159
+AP_large = 0.9342750032729457
+AR_max1 = 0.09823099008983978
+AR_max10 = 0.7942715569139576
+AR_max100 = 0.8090580716865796
+AR_small = -1.0
+AR_medium = 0.7766928777507495
+AR_large = 0.9551187133009957

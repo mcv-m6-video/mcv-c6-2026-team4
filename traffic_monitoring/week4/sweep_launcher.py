@@ -4,7 +4,7 @@ from mtmc import main
 sweep_config = {
     'method': 'bayes',
     'metric': {
-        'name': 'idf1',
+        'name': 'hota',
         'goal': 'maximize'   
     },
     'parameters': {

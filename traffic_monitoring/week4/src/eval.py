@@ -340,7 +340,8 @@ def eval(test, pred, **kwargs):
             imf = os.path.join(roidir, dstype, 'c%03d' % cid, 'roi.jpg')
             if not os.path.exists(imf):
                 raise ValueError("Missing ROI image for camera %03d." % cid)
-            img = Image.open( imf, mode='r')
+            # Force the image to grayscale to ensure a 2D (H, W) array
+            img = Image.open( imf, mode='r').convert('L') 
             img.load()
             if img.size[0] > img.size[1]:
                 img = img.transpose(Image.TRANSPOSE)

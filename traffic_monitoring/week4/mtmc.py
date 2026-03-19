@@ -23,10 +23,18 @@ AI_CITY_BASE_PATH = "../data/AI_CITY_CHALLENGE_2022_TRAIN"
 AI_CITY_SEQ_PATH = f"{AI_CITY_BASE_PATH}/train/S01" 
 GLOBAL_GT_PATH = f"{AI_CITY_BASE_PATH}/eval/ground_truth_train.txt" # Adjust if your GT is located elsewhere
 OUTPUT_PRED_FILE = "mtmc_predictions.txt"
+ROI_DIR = "train/S01"
 
 YOLO_WEIGHTS = "./yolov10s_coco.pt"
 REID_WEIGHTS = "./src/net_19.pth"
 CAMERAS = ["c001", "c002", "c003", "c004", "c005"] 
+#CAMERAS = ["c010", "c011", "c012", "c013", "c014", "c015"]
+"""CAMERAS = [
+    "c016", "c017", "c018", "c019", "c020", "c021", "c022", "c023",
+    "c024", "c025", "c026", "c027", "c028", "c029", "c030", "c031",
+    "c032", "c033", "c034", "c035", "c036", "c037", "c038", "c039",
+    "c040"
+]"""
 
 # Hyperparameters
 CONF_THRESHOLD = 0.45
@@ -39,6 +47,7 @@ GLOBAL_MATCH_THRESH = 0.6
 CAR_CLASS = 0
 # -----------------------------------
 
+WANDB=False
 WANDB=False
 
 def extract_reid_features(reid_model, transform, track_history, device):
@@ -151,8 +160,8 @@ def main():
 
         finished_tracks = tracker.finalize()
         print(f"Extracted {len(finished_tracks)} local tracklets.")
-
-        # Step B: Feature Extraction & Global Matching
+        
+        """# Step B: Feature Extraction & Global Matching
         for track in tqdm(finished_tracks, desc="Re-ID & Global Linking"):
             signature = extract_reid_features(reid_model, reid_transform, track["history"], device)
             if signature is None: 
@@ -208,6 +217,8 @@ def main():
                     })
                     next_global_id += 1
 
+        
+
             # Step C: Write to output file exactly how eval.py expects it
             # Format: CameraId, Id, FrameId, X, Y, Width, Height, Xworld, Yworld
             for hist_entry in track["history"]:
@@ -234,6 +245,7 @@ def main():
         
         print_results(summary, mread=False)
         results=get_results(summary)
+        print(results)
         
         if WANDB:
             wandb.log(results)
