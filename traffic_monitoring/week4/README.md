@@ -2,7 +2,7 @@
 
 This project implements a multi-camera multi-target tracking system for vehicle tracking across multiple camera views. It was developed for the AI City Challenge 2022, focusing on tracking vehicles across different camera perspectives in traffic scenarios.
 
-Link to the Google Slides Presentation → [link text](https://docs.google.com/presentation/d/1GIh7ZsBZdk1gFRL0EqgLg5Hli3SCXq974R0326KX4UI/edit?usp=sharing)
+Link to the Google Slides Presentation -> [MTMC](https://docs.google.com/presentation/d/1GIh7ZsBZdk1gFRL0EqgLg5Hli3SCXq974R0326KX4UI/edit?usp=sharing)
 
 ## Overview
 
