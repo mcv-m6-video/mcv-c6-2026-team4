@@ -161,7 +161,7 @@ def main():
         finished_tracks = tracker.finalize()
         print(f"Extracted {len(finished_tracks)} local tracklets.")
         
-        """# Step B: Feature Extraction & Global Matching
+        # Step B: Feature Extraction & Global Matching
         for track in tqdm(finished_tracks, desc="Re-ID & Global Linking"):
             signature = extract_reid_features(reid_model, reid_transform, track["history"], device)
             if signature is None: 
@@ -218,7 +218,6 @@ def main():
                     next_global_id += 1
 
         
-
             # Step C: Write to output file exactly how eval.py expects it
             # Format: CameraId, Id, FrameId, X, Y, Width, Height, Xworld, Yworld
             for hist_entry in track["history"]:
