@@ -26,7 +26,7 @@ matplotlib.use("TkAgg")   # headless-safe; switch to "TkAgg" / "Qt5Agg" for inte
 import matplotlib.animation as animation
 import matplotlib.pyplot as plt
 import numpy as np
-if not hasattr(np, "asfarray"):          # removed in NumPy 2.0, needed by motmetrics
+if not hasattr(np, "asfarray"):  
     np.asfarray = lambda a, dtype=float: np.asarray(a, dtype=dtype)
 import pandas as pd
 import torch
