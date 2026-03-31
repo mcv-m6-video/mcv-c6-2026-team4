@@ -143,6 +143,9 @@ def main(args):
 
             epoch_start_time = time.time()
 
+            if args.device == 'cuda':
+                torch.cuda.reset_peak_memory_stats()
+
             train_loss = model.epoch(
                 train_loader, optimizer, scaler,
                 lr_scheduler=lr_scheduler)
@@ -152,6 +155,11 @@ def main(args):
             epoch_time = time.time() - epoch_start_time
             current_lr = lr_scheduler.get_last_lr()[0]
 
+            peak_vram_mb = (
+                torch.cuda.max_memory_allocated() / 1024 ** 2
+                if args.device == 'cuda' else 0.0
+            )
+
             better = False
             if val_loss < best_criterion:
                 best_criterion = val_loss
@@ -159,20 +167,23 @@ def main(args):
                 better = True
 
             #Printing info epoch
-            print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f} LR: {:.2e} Time: {:.1f}s'.format(
-                epoch, train_loss, val_loss, current_lr, epoch_time))
+            print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f} LR: {:.2e} '
+                  'VRAM: {:.0f}MB Time: {:.1f}s'.format(
+                epoch, train_loss, val_loss, current_lr, peak_vram_mb, epoch_time))
             if better:
                 print('New best epoch!')
 
             wandb.log({
                 'train_loss': train_loss, 'val_loss': val_loss,
                 'lr': current_lr, 'epoch_time': epoch_time,
+                'peak_vram_mb': peak_vram_mb,
                 'epoch': epoch,
             })
 
             losses.append({
                 'epoch': epoch, 'train': train_loss, 'val': val_loss,
                 'lr': current_lr, 'epoch_time_s': epoch_time,
+                'peak_vram_mb': peak_vram_mb,
             })
 
             if args.save_dir is not None and not args.dry_run:
