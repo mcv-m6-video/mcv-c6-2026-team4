@@ -9,11 +9,13 @@ import torch
 import os
 import numpy as np
 import random
+import time
 from torch.optim.lr_scheduler import (
     ChainedScheduler, LinearLR, CosineAnnealingLR)
 import sys
 from torch.utils.data import DataLoader
 from tabulate import tabulate
+import wandb
 
 #Local imports
 from util.io import load_json, store_json
@@ -74,6 +76,12 @@ def main(args):
     config = load_json(config_path)
     args = update_args(args, config)
 
+    wandb.init(
+        project='action-classification',
+        name=args.model,
+        config={**config, 'seed': args.seed},
+    )
+
     # Directory for storing / reading model checkpoints
     ckpt_dir = os.path.join(args.save_dir, 'checkpoints')
     os.makedirs(ckpt_dir, exist_ok=True)
@@ -110,6 +118,9 @@ def main(args):
 
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
 
+    best_epoch = None
+    total_train_time = None
+
     if not args.only_test:
         # Warmup schedule
         num_steps_per_epoch = len(train_loader)
@@ -118,30 +129,45 @@ def main(args):
         
         losses = []
         best_criterion = float('inf')
+        best_epoch = 0
         epoch = 0
+        train_start_time = time.time()
 
         print('START TRAINING EPOCHS')
         for epoch in range(epoch, num_epochs):
 
+            epoch_start_time = time.time()
+
             train_loss = model.epoch(
                 train_loader, optimizer, scaler,
                 lr_scheduler=lr_scheduler)
-            
+
             val_loss = model.epoch(val_loader)
+
+            epoch_time = time.time() - epoch_start_time
+            current_lr = lr_scheduler.get_last_lr()[0]
 
             better = False
             if val_loss < best_criterion:
                 best_criterion = val_loss
+                best_epoch = epoch
                 better = True
-            
+
             #Printing info epoch
-            print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f}'.format(
-                epoch, train_loss, val_loss))
+            print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f} LR: {:.2e} Time: {:.1f}s'.format(
+                epoch, train_loss, val_loss, current_lr, epoch_time))
             if better:
-                print('New best mAP epoch!')
+                print('New best epoch!')
+
+            wandb.log({
+                'train_loss': train_loss, 'val_loss': val_loss,
+                'lr': current_lr, 'epoch_time': epoch_time,
+                'epoch': epoch,
+            })
 
             losses.append({
-                'epoch': epoch, 'train': train_loss, 'val': val_loss
+                'epoch': epoch, 'train': train_loss, 'val': val_loss,
+                'lr': current_lr, 'epoch_time_s': epoch_time,
             })
 
             if args.save_dir is not None:
@@ -150,6 +176,8 @@ def main(args):
 
                 if better:
                     torch.save( model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best.pt') )
+
+        total_train_time = time.time() - train_start_time
 
     print('START INFERENCE')
     model.load(torch.load(os.path.join(ckpt_dir, 'checkpoint_best.pt')))
@@ -165,12 +193,41 @@ def main(args):
     headers = ["Class", "Average Precision"]
     print(tabulate(table, headers, tablefmt="grid"))
 
+    # Compute mAP12 (all classes) and mAP10 (excluding FREE KICK and GOAL)
+    class_names = list(classes.keys())
+    exclude_classes = {'FREE KICK', 'GOAL'}
+    mask_10 = np.array([name not in exclude_classes for name in class_names])
+
+    map12 = np.mean(ap_score) * 100
+    map10 = np.mean(ap_score[mask_10]) * 100
+
     # Report average results in table
-    avg_table = [["Average", f"{np.mean(ap_score)*100:.2f}"]]
+    avg_table = [
+        ["mAP@12 (all)", f"{map12:.2f}"],
+        ["mAP@10 (excl. FREE KICK & GOAL)", f"{map10:.2f}"],
+    ]
     headers = ["", "Average Precision"]
 
     print(tabulate(avg_table, headers, tablefmt="grid"))
-    
+
+    results = {
+        'mAP12': map12,
+        'mAP10': map10,
+        'per_class_AP': {name: float(ap_score[i] * 100) for i, name in enumerate(class_names)},
+        'best_epoch': best_epoch,
+        'total_train_time_s': total_train_time,
+    }
+    store_json(os.path.join(args.save_dir, 'results.json'), results, pretty=True)
+
+    wandb.log({
+        **{f'AP/{name}': ap_score[i] * 100 for i, name in enumerate(class_names)},
+        'AP/mAP12': map12,
+        'AP/mAP10': map10,
+        'best_epoch': best_epoch,
+        'total_train_time_s': total_train_time,
+    })
+    wandb.finish()
+
     print('CORRECTLY FINISHED TRAINING AND INFERENCE')
 
 
