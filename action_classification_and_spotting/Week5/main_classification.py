@@ -29,6 +29,8 @@ def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, required=True)
     parser.add_argument('--seed', type=int, default=1)
+    parser.add_argument('--dry-run', action='store_true',
+                        help='Disable all logging (wandb and local files)')
     return parser.parse_args()
 
 def update_args(args, config):
@@ -51,6 +53,8 @@ def update_args(args, config):
     args.only_test = config['only_test']
     args.device = config['device']
     args.num_workers = config['num_workers']
+    args.neck_architecture = config.get('neck_architecture', 'max_pool')
+    args.neck_parameters = config.get('neck_parameters', {})
 
     return args
 
@@ -80,6 +84,7 @@ def main(args):
         project='action-classification',
         name=args.model,
         config={**config, 'seed': args.seed},
+        mode='disabled' if args.dry_run else 'online',
     )
 
     # Directory for storing / reading model checkpoints
@@ -170,7 +175,7 @@ def main(args):
                 'lr': current_lr, 'epoch_time_s': epoch_time,
             })
 
-            if args.save_dir is not None:
+            if args.save_dir is not None and not args.dry_run:
                 os.makedirs(args.save_dir, exist_ok=True)
                 store_json(os.path.join(args.save_dir, 'loss.json'), losses, pretty=True)
 
@@ -217,7 +222,8 @@ def main(args):
         'best_epoch': best_epoch,
         'total_train_time_s': total_train_time,
     }
-    store_json(os.path.join(args.save_dir, 'results.json'), results, pretty=True)
+    if not args.dry_run:
+        store_json(os.path.join(args.save_dir, 'results.json'), results, pretty=True)
 
     wandb.log({
         **{f'AP/{name}': ap_score[i] * 100 for i, name in enumerate(class_names)},

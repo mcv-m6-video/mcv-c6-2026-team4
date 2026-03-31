@@ -14,6 +14,7 @@ import torch.nn.functional as F
 
 #Local imports
 from model.modules import BaseRGBModel, FCLayers, step
+from model.neck import create_neck
 
 class Model(BaseRGBModel):
 
@@ -33,15 +34,21 @@ class Model(BaseRGBModel):
 
                 # Remove final classification layer
                 features.head.fc = nn.Identity()
-                self._d = feat_dim
 
             else:
                 raise NotImplementedError(args._feature_arch)
 
             self._features = features
 
+            # Temporal neck
+            self._neck, neck_out_dim = create_neck(
+                getattr(args, 'neck_architecture', None),
+                feat_dim,
+                getattr(args, 'neck_parameters', None),
+            )
+
             # MLP for classification
-            self._fc = FCLayers(self._d, args.num_classes)
+            self._fc = FCLayers(neck_out_dim, args.num_classes)
 
             #Augmentations and crop
             self.augmentation = T.Compose([
@@ -69,10 +76,10 @@ class Model(BaseRGBModel):
                         
             im_feat = self._features(
                 x.view(-1, channels, height, width)
-            ).reshape(batch_size, clip_len, self._d) #B, T, D
+            ).reshape(batch_size, clip_len, -1) #B, T, D
 
-            #Max pooling
-            im_feat = torch.max(im_feat, dim=1)[0] #B, D
+            # Temporal neck
+            im_feat = self._neck(im_feat)   # (B, D)
 
             #MLP
             im_feat = self._fc(im_feat) #B, num_classes
