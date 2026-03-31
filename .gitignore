@@ -3,8 +3,6 @@ __pycache__
 AICity_data
 *.xml
 *.zip
-*.csv
-*.json
 *.pth
 *.pt
 traffic_monitoring/week3/models/FlowFormerPlusPlus/viz_kitti/*
