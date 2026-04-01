@@ -55,6 +55,7 @@ def update_args(args, config):
     args.num_workers = config['num_workers']
     args.neck_architecture = config.get('neck_architecture', 'max_pool')
     args.neck_parameters = config.get('neck_parameters', {})
+    args.map_eval_freq = config.get('map_eval_freq', 2)
 
     return args
 
@@ -94,6 +95,10 @@ def main(args):
     # Get datasets train, validation (and validation for map -> Video dataset)
     classes, train_data, val_data, test_data = get_datasets(args)
 
+    class_names = list(classes.keys())
+    exclude_classes = {'FREE KICK', 'GOAL'}
+    mask_10 = np.array([name not in exclude_classes for name in class_names])
+
     if args.store_mode == 'store':
         print('Datasets have been stored correctly! Re-run changing "mode" to "load" in the config JSON.')
         sys.exit('Datasets have correctly been stored! Stop training here and rerun with load mode.')
@@ -105,14 +110,14 @@ def main(args):
 
     # Dataloaders
     train_loader = DataLoader(
-        train_data, shuffle=False, batch_size=args.batch_size,
+        train_data, shuffle=True, batch_size=args.batch_size,
         pin_memory=True, num_workers=args.num_workers,
         prefetch_factor=(2 if args.num_workers > 0 else None),
         worker_init_fn=worker_init_fn
     )
         
     val_loader = DataLoader(
-        val_data, shuffle=False, batch_size=args.batch_size,
+        val_data, shuffle=True, batch_size=args.batch_size,
         pin_memory=True, num_workers=args.num_workers,
         prefetch_factor=(2 if args.num_workers > 0 else None),
         worker_init_fn=worker_init_fn
@@ -123,7 +128,9 @@ def main(args):
 
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
 
-    best_epoch = None
+    best_epoch_loss = None
+    best_epoch_map12 = None
+    best_epoch_map10 = None
     total_train_time = None
 
     if not args.only_test:
@@ -131,10 +138,14 @@ def main(args):
         num_steps_per_epoch = len(train_loader)
         num_epochs, lr_scheduler = get_lr_scheduler(
             args, optimizer, num_steps_per_epoch)
-        
+
         losses = []
-        best_criterion = float('inf')
-        best_epoch = 0
+        best_loss = float('inf')
+        best_map12_val = -float('inf')
+        best_map10_val = -float('inf')
+        best_epoch_loss = 0
+        best_epoch_map12 = 0
+        best_epoch_map10 = 0
         epoch = 0
         train_start_time = time.time()
 
@@ -160,25 +171,57 @@ def main(args):
                 if args.device == 'cuda' else 0.0
             )
 
-            better = False
-            if val_loss < best_criterion:
-                best_criterion = val_loss
-                best_epoch = epoch
-                better = True
+            better_loss = val_loss < best_loss
+            if better_loss:
+                best_loss = val_loss
+                best_epoch_loss = epoch
 
             #Printing info epoch
             print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f} LR: {:.2e} '
                   'VRAM: {:.0f}MB Time: {:.1f}s'.format(
                 epoch, train_loss, val_loss, current_lr, peak_vram_mb, epoch_time))
-            if better:
-                print('New best epoch!')
+            if better_loss:
+                print('New best epoch (loss)!')
 
-            wandb.log({
+            wandb_log = {
                 'train_loss': train_loss, 'val_loss': val_loss,
                 'lr': current_lr, 'epoch_time': epoch_time,
                 'peak_vram_mb': peak_vram_mb,
                 'epoch': epoch,
-            })
+            }
+
+            # Evaluate mAP on validation set every map_eval_freq epochs
+            if epoch % args.map_eval_freq == 0:
+                val_ap = evaluate(model, val_data)
+                val_map12 = float(np.mean(val_ap) * 100)
+                val_map10 = float(np.mean(val_ap[mask_10]) * 100)
+
+                better_map12 = val_map12 > best_map12_val
+                better_map10 = val_map10 > best_map10_val
+
+                if better_map12:
+                    best_map12_val = val_map12
+                    best_epoch_map12 = epoch
+                if better_map10:
+                    best_map10_val = val_map10
+                    best_epoch_map10 = epoch
+
+                print('  Val mAP12: {:0.2f} Val mAP10: {:0.2f}{}{}'.format(
+                    val_map12, val_map10,
+                    ' | New best mAP12!' if better_map12 else '',
+                    ' | New best mAP10!' if better_map10 else '',
+                ))
+
+                wandb_log['val_map12'] = val_map12
+                wandb_log['val_map10'] = val_map10
+
+                if args.save_dir is not None and not args.dry_run:
+                    if better_map12:
+                        torch.save(model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best_map12.pt'))
+                    if better_map10:
+                        torch.save(model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best_map10.pt'))
+
+            wandb.log(wandb_log)
 
             losses.append({
                 'epoch': epoch, 'train': train_loss, 'val': val_loss,
@@ -190,59 +233,71 @@ def main(args):
                 os.makedirs(args.save_dir, exist_ok=True)
                 store_json(os.path.join(args.save_dir, 'loss.json'), losses, pretty=True)
 
-                if better:
-                    torch.save( model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best.pt') )
+                if better_loss:
+                    torch.save(model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best_loss.pt'))
 
         total_train_time = time.time() - train_start_time
 
     print('START INFERENCE')
-    model.load(torch.load(os.path.join(ckpt_dir, 'checkpoint_best.pt')))
 
-    # Evaluation on test split
-    ap_score = evaluate(model, test_data)
-
-    # Report results per-class in table
-    table = []
-    for i, class_name in enumerate(classes.keys()):
-        table.append([class_name, f"{ap_score[i]*100:.2f}"])
-
-    headers = ["Class", "Average Precision"]
-    print(tabulate(table, headers, tablefmt="grid"))
-
-    # Compute mAP12 (all classes) and mAP10 (excluding FREE KICK and GOAL)
-    class_names = list(classes.keys())
-    exclude_classes = {'FREE KICK', 'GOAL'}
-    mask_10 = np.array([name not in exclude_classes for name in class_names])
-
-    map12 = np.mean(ap_score) * 100
-    map10 = np.mean(ap_score[mask_10]) * 100
-
-    # Report average results in table
-    avg_table = [
-        ["mAP@12 (all)", f"{map12:.2f}"],
-        ["mAP@10 (excl. FREE KICK & GOAL)", f"{map10:.2f}"],
+    # Evaluate each checkpoint on the test set and report separately
+    checkpoints = [
+        ('best_loss',  'checkpoint_best_loss.pt'),
+        ('best_map12', 'checkpoint_best_map12.pt'),
+        ('best_map10', 'checkpoint_best_map10.pt'),
     ]
-    headers = ["", "Average Precision"]
-
-    print(tabulate(avg_table, headers, tablefmt="grid"))
-
-    results = {
-        'mAP12': map12,
-        'mAP10': map10,
-        'per_class_AP': {name: float(ap_score[i] * 100) for i, name in enumerate(class_names)},
-        'best_epoch': best_epoch,
-        'total_train_time_s': total_train_time,
+    best_epochs = {
+        'best_loss':  best_epoch_loss,
+        'best_map12': best_epoch_map12,
+        'best_map10': best_epoch_map10,
     }
-    if not args.dry_run:
-        store_json(os.path.join(args.save_dir, 'results.json'), results, pretty=True)
 
-    wandb.log({
-        **{f'AP/{name}': ap_score[i] * 100 for i, name in enumerate(class_names)},
-        'AP/mAP12': map12,
-        'AP/mAP10': map10,
-        'best_epoch': best_epoch,
-        'total_train_time_s': total_train_time,
-    })
+    all_results = {'total_train_time_s': total_train_time}
+    wandb_final = {'total_train_time_s': total_train_time}
+
+    for ckpt_name, ckpt_file in checkpoints:
+        ckpt_path = os.path.join(ckpt_dir, ckpt_file)
+        if not os.path.exists(ckpt_path):
+            print(f'Checkpoint {ckpt_file} not found, skipping.')
+            continue
+
+        print(f'\n--- Evaluating {ckpt_name} (epoch {best_epochs[ckpt_name]}) ---')
+        model.load(torch.load(ckpt_path))
+
+        ap_score = evaluate(model, test_data)
+
+        # Report results per-class in table
+        table = []
+        for i, class_name in enumerate(class_names):
+            table.append([class_name, f"{ap_score[i]*100:.2f}"])
+        print(tabulate(table, ["Class", "Average Precision"], tablefmt="grid"))
+
+        map12 = float(np.mean(ap_score) * 100)
+        map10 = float(np.mean(ap_score[mask_10]) * 100)
+
+        avg_table = [
+            ["mAP@12 (all)", f"{map12:.2f}"],
+            ["mAP@10 (excl. FREE KICK & GOAL)", f"{map10:.2f}"],
+        ]
+        print(tabulate(avg_table, ["", "Average Precision"], tablefmt="grid"))
+
+        all_results[ckpt_name] = {
+            'mAP12': map12,
+            'mAP10': map10,
+            'per_class_AP': {name: float(ap_score[i] * 100) for i, name in enumerate(class_names)},
+            'best_epoch': best_epochs[ckpt_name],
+        }
+
+        wandb_final[f'{ckpt_name}/mAP12'] = map12
+        wandb_final[f'{ckpt_name}/mAP10'] = map10
+        wandb_final[f'{ckpt_name}/best_epoch'] = best_epochs[ckpt_name]
+        for i, name in enumerate(class_names):
+            wandb_final[f'{ckpt_name}/AP/{name}'] = float(ap_score[i] * 100)
+
+    if not args.dry_run:
+        store_json(os.path.join(args.save_dir, 'results.json'), all_results, pretty=True)
+
+    wandb.log(wandb_final)
     wandb.finish()
 
     print('CORRECTLY FINISHED TRAINING AND INFERENCE')
