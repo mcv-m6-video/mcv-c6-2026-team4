@@ -82,6 +82,7 @@ class _TCNBlock(nn.Module):
             channels, channels, kernel_size,
             dilation=dilation, padding=padding,
         )
+        # FIXME: BatchNorm is trash with small batch size, change to GroupNorm
         self._norm = nn.BatchNorm1d(channels)
         self._dropout = nn.Dropout(dropout)
 
