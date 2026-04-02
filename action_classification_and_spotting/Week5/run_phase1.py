@@ -42,7 +42,7 @@ DEFAULT_MODELS = [
     'phase1_tcn_unet_3l',
 ]
 
-LOG_DIR = 'logs/phase1'
+DEFAULT_LOG_DIR = 'logs/phase1'
 START_DELAY_S = 10   # seconds to wait between consecutive experiment starts
 
 # ---------------------------------------------------------------------------
@@ -53,9 +53,9 @@ def _now():
     return datetime.now().strftime('%H:%M:%S')
 
 
-def _run(model_name, gpu_id, gpu_queue, results, dry_run):
+def _run(model_name, gpu_id, gpu_queue, results, dry_run, log_dir):
     """Run one experiment on gpu_id, then return the GPU to the pool."""
-    log_path = os.path.join(LOG_DIR, f'{model_name}.log')
+    log_path = os.path.join(log_dir, f'{model_name}.log')
     print(f'[{_now()}] GPU {gpu_id} | START  {model_name:<35s}  log → {log_path}',
           flush=True)
 
@@ -110,6 +110,11 @@ def main():
         help='Pass --dry-run to each experiment (disables wandb and local file writes)',
     )
     parser.add_argument(
+        '--log-dir', type=str, default=DEFAULT_LOG_DIR,
+        metavar='DIR',
+        help=f'Directory for per-experiment log files (default: {DEFAULT_LOG_DIR})',
+    )
+    parser.add_argument(
         '--start-delay', type=int, default=START_DELAY_S,
         metavar='SECONDS',
         help=f'Seconds to wait between consecutive experiment starts to avoid '
@@ -117,7 +122,7 @@ def main():
     )
     args = parser.parse_args()
 
-    os.makedirs(LOG_DIR, exist_ok=True)
+    os.makedirs(args.log_dir, exist_ok=True)
 
     gpu_queue = queue.Queue()
     for gpu in args.gpus:
@@ -135,7 +140,7 @@ def main():
         gpu_id = gpu_queue.get()
         t = threading.Thread(
             target=_run,
-            args=(model_name, gpu_id, gpu_queue, results, args.dry_run),
+            args=(model_name, gpu_id, gpu_queue, results, args.dry_run, args.log_dir),
             daemon=True,
         )
         t.start()

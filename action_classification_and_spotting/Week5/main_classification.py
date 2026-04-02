@@ -56,6 +56,8 @@ def update_args(args, config):
     args.neck_architecture = config.get('neck_architecture', 'max_pool')
     args.neck_parameters = config.get('neck_parameters', {})
     args.map_eval_freq = config.get('map_eval_freq', 2)
+    args.loss = config.get('loss', 'bce')
+    args.loss_parameters = config.get('loss_parameters', {})
 
     return args
 
@@ -127,6 +129,22 @@ def main(args):
     model = Model(args=args)
 
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
+
+    # Compute pos_weight from training label frequencies for weighted BCE
+    pos_weight = None
+    if args.loss == 'weighted_bce':
+        counts = np.zeros(args.num_classes, dtype=np.float32)
+        for clip_labels in train_data._labels_store:
+            for lbl in clip_labels:
+                counts[lbl['label'] - 1] += 1  # labels are 1-indexed
+        total = len(train_data._labels_store)
+        pos_weight = (total - counts) / np.maximum(counts, 1)
+        max_pos_weight = args.loss_parameters.get('max_pos_weight', 50.0)
+        pos_weight = np.minimum(pos_weight, max_pos_weight)
+        print('Weighted BCE pos_weight (capped at {}):'.format(max_pos_weight),
+              np.round(pos_weight, 1))
+
+    model.configure_loss(args.loss, pos_weight, args.loss_parameters)
 
     best_epoch_loss = None
     best_epoch_map12 = None

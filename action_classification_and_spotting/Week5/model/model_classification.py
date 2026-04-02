@@ -114,6 +114,41 @@ class Model(BaseRGBModel):
 
         self._model.to(self.device)
         self._num_classes = args.num_classes
+        self._loss_fn = None  # set by configure_loss before training
+
+    def configure_loss(self, loss_type, pos_weight=None, loss_parameters=None):
+        loss_parameters = loss_parameters or {}
+
+        if loss_type == 'bce':
+            self._loss_fn = lambda pred, label: F.binary_cross_entropy_with_logits(pred, label)
+
+        elif loss_type == 'weighted_bce':
+            if pos_weight is None:
+                raise ValueError('pos_weight must be provided for weighted_bce loss')
+            w = torch.tensor(pos_weight, dtype=torch.float32).to(self.device)
+            self._loss_fn = lambda pred, label: F.binary_cross_entropy_with_logits(
+                pred, label, pos_weight=w)
+
+        elif loss_type == 'focal':
+            gamma = loss_parameters.get('gamma', 2.0)
+            alpha = loss_parameters.get('alpha', 0.25)
+
+            def focal_loss(pred, label):
+                bce = F.binary_cross_entropy_with_logits(pred, label, reduction='none')
+                p = torch.sigmoid(pred)
+                pt = p * label + (1 - p) * (1 - label)
+                weight = (1 - pt) ** gamma
+                if alpha >= 0:
+                    alpha_t = alpha * label + (1 - alpha) * (1 - label)
+                    weight = alpha_t * weight
+                return (weight * bce).mean()
+
+            self._loss_fn = focal_loss
+
+        else:
+            raise ValueError(f'Unknown loss type: {loss_type!r}. Choose from bce, weighted_bce, focal.')
+
+        print(f'Loss configured: {loss_type}  params={loss_parameters}')
 
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None):
 
@@ -134,8 +169,7 @@ class Model(BaseRGBModel):
 
                 with torch.cuda.amp.autocast():
                     pred = self._model(frame)
-                    loss = F.binary_cross_entropy_with_logits(
-                            pred, label)
+                    loss = self._loss_fn(pred, label)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss,
