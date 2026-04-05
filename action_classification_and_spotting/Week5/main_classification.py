@@ -58,6 +58,7 @@ def update_args(args, config):
     args.map_eval_freq = config.get('map_eval_freq', 2)
     args.loss = config.get('loss', 'bce')
     args.loss_parameters = config.get('loss_parameters', {})
+    args.freeze_backbone = config.get('freeze_backbone', False)
 
     return args
 
