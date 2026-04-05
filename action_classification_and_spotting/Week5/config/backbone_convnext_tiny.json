@@ -1,0 +1,26 @@
+{
+  "frame_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_frames/398x224",
+  "save_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_savedata",
+  "labels_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025",
+  "store_mode": "load",
+  "task": "classification",
+  "batch_size": 2,
+  "clip_len": 50,
+  "stride": 2,
+  "dataset": "soccernetball",
+  "epoch_num_frames": 500000,
+  "feature_arch": "convnext_tiny",
+  "neck_architecture": "tcn",
+  "neck_parameters": {
+    "num_layers": 5,
+    "kernel_size": 3,
+    "dropout": 0.1
+  },
+  "learning_rate": 0.0005,
+  "num_classes": 12,
+  "num_epochs": 35,
+  "warm_up_epochs": 3,
+  "only_test": false,
+  "device": "cuda",
+  "num_workers": 4
+}

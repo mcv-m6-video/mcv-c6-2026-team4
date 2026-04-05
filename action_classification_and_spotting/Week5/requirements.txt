@@ -11,3 +11,5 @@ opencv-contrib-python==4.11.0.86
 tqdm==4.66.4
 moviepy==1.0.3
 huggingface_hub[cli]==0.29.3
+open_clip_torch==2.24.0
+wandb
