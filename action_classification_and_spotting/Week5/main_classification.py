@@ -89,6 +89,7 @@ def main(args):
         name=args.model,
         config={**config, 'seed': args.seed},
         mode='disabled' if args.dry_run else 'online',
+        entity='just-an-arbitrary-team-name'
     )
 
     # Directory for storing / reading model checkpoints
