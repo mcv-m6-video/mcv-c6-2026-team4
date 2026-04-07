@@ -1,0 +1,31 @@
+{
+  "frame_dir": "/hhome/priubrogent/soccer_dataset/soccer_frames/398x224",
+  "save_dir": "/hhome/priubrogent/soccer_dataset/soccer_savedata",
+  "labels_dir": "/hhome/priubrogent/soccer_dataset/soccer",
+  "store_mode": "store",
+  "task": "classification",
+  "batch_size": 4,
+  "clip_len": 50,
+  "stride": 1,
+  "dataset": "soccernetball",
+  "epoch_num_frames": 500000,
+  "feature_arch": "rny004",
+  "neck_architecture": "gru",
+  "neck_parameters": {
+    "num_layers": 1,
+    "bidirectional": true,
+    "dropout": 0.0
+  },
+  "loss": "focal",
+  "loss_parameters": {
+    "gamma": 2.0,
+    "alpha": 0.25
+  },
+  "learning_rate": 0.0008,
+  "num_classes": 12,
+  "num_epochs": 28,
+  "warm_up_epochs": 3,
+  "only_test": false,
+  "device": "cuda",
+  "num_workers": 4
+}

@@ -115,7 +115,7 @@ class ActionSpotDataset(Dataset):
                     self._labels_store.append(labels)
 
         #Save to store
-        store_path = os.path.join(self._store_dir, 'LEN' + str(self._clip_len) + 'SPLIT' + self._split) #store clips information of dataset with LEN and SPLIT information
+        store_path = os.path.join(self._store_dir, 'LEN' + str(self._clip_len) + 'STRIDE' + str(self._stride) + 'SPLIT' + self._split)
 
         if not os.path.exists(store_path):
             os.makedirs(store_path)
@@ -128,8 +128,8 @@ class ActionSpotDataset(Dataset):
         return
     
     def _load_clips(self):
-        store_path = os.path.join(self._store_dir, 'LEN' + str(self._clip_len) + 'SPLIT' + self._split)
-        
+        store_path = os.path.join(self._store_dir, 'LEN' + str(self._clip_len) + 'STRIDE' + str(self._stride) + 'SPLIT' + self._split)
+
         with open(store_path + '/frame_paths.pkl', 'rb') as f:
             self._frame_paths = pickle.load(f)
         with open(store_path + '/labels.pkl', 'rb') as f:
