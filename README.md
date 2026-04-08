@@ -11,6 +11,7 @@ Link to the Google Slides Presentation -> [MTMC](https://docs.google.com/present
 
 ## Weeks
 
+Traffic Monitoring
 - [Week 1](traffic_monitoring/week1/)
 - [Week 2](traffic_monitoring/week2/)
   - [README](traffic_monitoring/week2/README.md)
@@ -18,3 +19,7 @@ Link to the Google Slides Presentation -> [MTMC](https://docs.google.com/present
   - [README](traffic_monitoring/week3/README.md)
 - [Week 4](traffic_monitoring/week4/)
   - [README](traffic_monitoring/week4/README.md)
+ 
+Ball Action Classification and Spotting
+- [Week 5](action_classification_and_spotting/Week5/)
+  - [README](action_classification_and_spotting/Week5/README.md)
