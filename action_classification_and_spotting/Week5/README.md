@@ -1,8 +1,10 @@
 ### Master in Computer Vision (Barcelona) 2025/26
 
-# Project 2 (Task 1) @ C6 - Video Analysis
+# Best model checkpoint
 
-This repository provides the starter code for Task 1 of Project 2: Action classification on the SoccerNet Ball Action Spotting 2025 (SN-BAS-2025) dataset.
+[checkpoint](https://drive.google.com/file/d/1YG9oFR-pfB5gHyZy50M0YrTGQV8InLOt/view?usp=sharing)
+
+# Project 2 (Task 1) @ C6 - Video Analysis
 
 The installation of dependencies, how to obtain the dataset, and instructions on running the classification baseline are detailed next.
 
