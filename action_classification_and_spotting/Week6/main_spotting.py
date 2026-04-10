@@ -54,6 +54,8 @@ def update_args(args, config):
     args.device = config['device']
     args.num_workers = config['num_workers']
     args.map_eval_freq = config.get('map_eval_freq', 2)
+    args.neck_architecture = config.get('neck_architecture', 'identity')
+    args.neck_parameters = config.get('neck_parameters', {})
 
     return args
 

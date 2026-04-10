@@ -14,6 +14,7 @@ import torch.nn.functional as F
 
 #Local imports
 from model.modules import BaseRGBModel, FCLayers, step
+from model.neck import create_neck
 
 class Model(BaseRGBModel):
 
@@ -40,8 +41,15 @@ class Model(BaseRGBModel):
 
             self._features = features
 
+            # Temporal neck
+            self._neck, neck_out_dim = create_neck(
+                getattr(args, 'neck_architecture', 'identity'),
+                self._d,
+                getattr(args, 'neck_parameters', None),
+            )
+
             # MLP for classification
-            self._fc = FCLayers(self._d, args.num_classes+1) # +1 for background class (we now perform per-frame classification with softmax, therefore we have the extra background class)
+            self._fc = FCLayers(neck_out_dim, args.num_classes+1) # +1 for background class (we now perform per-frame classification with softmax, therefore we have the extra background class)
 
             #Augmentations and crop
             self.augmentation = T.Compose([
@@ -70,6 +78,9 @@ class Model(BaseRGBModel):
             im_feat = self._features(
                 x.view(-1, channels, height, width)
             ).reshape(batch_size, clip_len, self._d) #B, T, D
+
+            # Temporal neck: (B, T, D) -> (B, T, D')
+            im_feat = self._neck(im_feat)
 
             #MLP
             im_feat = self._fc(im_feat) #B, T, num_classes+1
