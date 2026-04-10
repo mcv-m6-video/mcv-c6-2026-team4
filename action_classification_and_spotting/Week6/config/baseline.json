@@ -1,8 +1,8 @@
 {
-    "frame_dir": "/data-fast/data-server/aclapes/SN-BAS-2025_frames/398x224",
-    "save_dir": "/data-fast/data-server/aclapes/SN-BAS-2025_savedata",
-    "labels_dir": "/data-fast/data-server/aclapes/SN-BAS-2025",
-    "store_mode": "store",
+    "frame_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_frames/398x224",
+    "save_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_savedata",
+    "labels_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025",
+    "store_mode": "load",
     "task": "spotting",
     "batch_size": 4,
     "clip_len": 50,
