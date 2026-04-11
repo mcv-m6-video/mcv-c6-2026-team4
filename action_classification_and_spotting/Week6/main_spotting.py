@@ -56,6 +56,8 @@ def update_args(args, config):
     args.map_eval_freq = config.get('map_eval_freq', 2)
     args.neck_architecture = config.get('neck_architecture', 'identity')
     args.neck_parameters = config.get('neck_parameters', {})
+    args.focal_gamma = config.get('focal_gamma', 0.0)
+    args.focal_alpha = config.get('focal_alpha', 5.0)
 
     return args
 

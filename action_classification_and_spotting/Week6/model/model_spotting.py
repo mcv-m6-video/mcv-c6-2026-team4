@@ -115,6 +115,20 @@ class Model(BaseRGBModel):
 
         self._model.to(self.device)
         self._num_classes = args.num_classes
+        self._focal_gamma = getattr(args, 'focal_gamma', 0.0)
+        self._focal_alpha = getattr(args, 'focal_alpha', 5.0)
+
+    def _loss(self, pred, label, weights):
+        """Weighted cross-entropy, optionally with focal modulation."""
+        if self._focal_gamma == 0.0:
+            return F.cross_entropy(pred, label, weight=weights, reduction='mean')
+
+        # Focal loss: CE * (1 - p_t)^gamma, with per-class weights playing the alpha role
+        log_p = F.log_softmax(pred, dim=-1)                             # (N, C)
+        p_t = torch.exp(log_p.gather(1, label.unsqueeze(1))).squeeze(1) # (N,)
+        focal_weight = (1.0 - p_t) ** self._focal_gamma                 # (N,)
+        ce = F.nll_loss(log_p, label, weight=weights, reduction='none') # (N,)
+        return (focal_weight * ce).mean()
 
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None):
 
@@ -126,7 +140,10 @@ class Model(BaseRGBModel):
             optimizer.zero_grad()
             self._model.train()
 
-        weights = torch.tensor([1.0] + [5.0] * (self._num_classes), dtype=torch.float32).to(self.device)
+        weights = torch.tensor(
+            [1.0] + [self._focal_alpha] * self._num_classes,
+            dtype=torch.float32,
+        ).to(self.device)
 
         epoch_loss = 0.
         with torch.no_grad() if optimizer is None else nullcontext():
@@ -139,8 +156,7 @@ class Model(BaseRGBModel):
                     pred = self._model(frame)
                     pred = pred.view(-1, self._num_classes + 1) # B*T, num_classes
                     label = label.view(-1) # B*T
-                    loss = F.cross_entropy(
-                            pred, label, reduction='mean', weight = weights)
+                    loss = self._loss(pred, label, weights)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss,
