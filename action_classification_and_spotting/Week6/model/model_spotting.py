@@ -16,6 +16,40 @@ import torch.nn.functional as F
 from model.modules import BaseRGBModel, FCLayers, step
 from model.neck import create_neck
 
+
+_CLIP_ARCHS = {
+    'clip_vitb32': ('ViT-B-32', 'openai'),
+    'clip_vitb16': ('ViT-B-16', 'openai'),
+    'clip_vitl14': ('ViT-L-14', 'openai'),
+    'clip_rn50':   ('RN50',     'openai'),
+}
+
+_TIMM_ALIASES = {
+    'rny002': 'regnety_002',
+    'rny004': 'regnety_004',
+    'rny008': 'regnety_008',
+}
+
+
+def _build_backbone(arch, freeze=False):
+    if arch in _CLIP_ARCHS:
+        import open_clip
+        clip_model, _ = open_clip.create_model_and_transform(*_CLIP_ARCHS[arch])
+        model = clip_model.visual.float()
+        feat_dim = clip_model.visual.output_dim
+        freeze = True  # CLIP backbone is always frozen
+    else:
+        timm_name = _TIMM_ALIASES.get(arch, arch)
+        model = timm.create_model(timm_name, pretrained=True, num_classes=0)
+        feat_dim = model.num_features
+
+    if freeze:
+        for p in model.parameters():
+            p.requires_grad = False
+
+    return model, feat_dim
+
+
 class Model(BaseRGBModel):
 
     class Impl(nn.Module):
@@ -24,22 +58,10 @@ class Model(BaseRGBModel):
             super().__init__()
             self._feature_arch = args.feature_arch
 
-            if self._feature_arch.startswith(('rny002', 'rny004', 'rny008')):
-                features = timm.create_model({
-                    'rny002': 'regnety_002',
-                    'rny004': 'regnety_004',
-                    'rny008': 'regnety_008',
-                }[self._feature_arch.rsplit('_', 1)[0]], pretrained=True)
-                feat_dim = features.head.fc.in_features
-
-                # Remove final classification layer
-                features.head.fc = nn.Identity()
-                self._d = feat_dim
-
-            else:
-                raise NotImplementedError(args._feature_arch)
-
-            self._features = features
+            self._features, self._d = _build_backbone(
+                self._feature_arch,
+                freeze=getattr(args, 'freeze_backbone', False),
+            )
 
             # Temporal neck
             self._neck, neck_out_dim = create_neck(
@@ -61,10 +83,19 @@ class Model(BaseRGBModel):
                 T.RandomHorizontalFlip(),
             ])
 
-            #Standarization
-            self.standarization = T.Compose([
-                T.Normalize(mean = (0.485, 0.456, 0.406), std = (0.229, 0.224, 0.225)) #Imagenet mean and std
-            ])
+            # CLIP uses its own normalization stats; everything else uses ImageNet
+            if self._feature_arch.startswith('clip_'):
+                self.standarization = T.Normalize(
+                    mean=(0.48145466, 0.4578275, 0.40821073),
+                    std=(0.26862954, 0.26130258, 0.27577711))
+            else:
+                self.standarization = T.Normalize(
+                    mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+
+            # CLIP ViT models require 224x224 input
+            self._clip_vit_resize = None
+            if self._feature_arch in ('clip_vitb32', 'clip_vitb16', 'clip_vitl14'):
+                self._clip_vit_resize = T.Resize((224, 224))
 
         def forward(self, x):
             x = self.normalize(x) #Normalize to 0-1
@@ -73,11 +104,19 @@ class Model(BaseRGBModel):
             if self.training:
                 x = self.augment(x) #augmentation per-batch
 
-            x = self.standarize(x) #standarization imagenet stats
-                        
-            im_feat = self._features(
-                x.view(-1, channels, height, width)
-            ).reshape(batch_size, clip_len, self._d) #B, T, D
+            x = self.standarize(x) #standarization
+
+            frames = x.view(-1, channels, height, width)
+
+            if self._clip_vit_resize is not None:
+                frames = self._clip_vit_resize(frames)
+
+            if self._feature_arch.startswith('clip_'):
+                im_feat = self._features(frames).float()
+            else:
+                im_feat = self._features(frames)
+
+            im_feat = im_feat.reshape(batch_size, clip_len, self._d) #B, T, D
 
             # Temporal neck: (B, T, D) -> (B, T, D')
             im_feat = self._neck(im_feat)
