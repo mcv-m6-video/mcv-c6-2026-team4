@@ -28,6 +28,9 @@ _TIMM_ALIASES = {
     'rny002': 'regnety_002',
     'rny004': 'regnety_004',
     'rny008': 'regnety_008',
+    'rny016': 'regnety_016',
+    'rny032': 'regnety_032',
+    'rny064': 'regnety_064',
 }
 
 
