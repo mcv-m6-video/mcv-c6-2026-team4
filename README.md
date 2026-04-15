@@ -23,3 +23,5 @@ Traffic Monitoring
 Ball Action Classification and Spotting
 - [Week 5](action_classification_and_spotting/Week5/)
   - [README](action_classification_and_spotting/Week5/README.md)
+- [Week 6](action_classification_and_spotting/Week6/)
+  - [README](action_classification_and_spotting/Week6/README.md)
