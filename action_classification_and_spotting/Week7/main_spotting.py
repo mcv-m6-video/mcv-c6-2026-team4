@@ -58,6 +58,8 @@ def update_args(args, config):
     args.neck_parameters = config.get('neck_parameters', {})
     args.focal_gamma = config.get('focal_gamma', 0.0)
     args.focal_alpha = config.get('focal_alpha', 5.0)
+    args.label_mode = config.get('label_mode', 'onehot')
+    args.label_sigma = config.get('label_sigma', 1.0)
 
     return args
 
@@ -195,9 +197,12 @@ def main(args):
 
             # Evaluate mAP on validation set every map_eval_freq epochs
             if epoch % args.map_eval_freq == 0:
-                val_map, val_ap = evaluate(model, val_video_data)
-                val_map12 = float(val_map * 100)
-                val_map10 = float(np.mean(val_ap[mask_10]) * 100)
+                val_results = evaluate(model, val_video_data)
+                # Primary metric for checkpoint selection: delta = 1s
+                val_map12 = float(val_results[1.0]['mAP'] * 100)
+                val_map10 = float(np.mean(val_results[1.0]['AP_per_class'][mask_10]) * 100)
+                val_map12_05 = float(val_results[0.5]['mAP'] * 100)
+                val_map10_05 = float(np.mean(val_results[0.5]['AP_per_class'][mask_10]) * 100)
 
                 better_map12 = val_map12 > best_map12_val
                 better_map10 = val_map10 > best_map10_val
@@ -209,14 +214,17 @@ def main(args):
                     best_map10_val = val_map10
                     best_epoch_map10 = epoch
 
-                print('  Val mAP12: {:0.2f} Val mAP10: {:0.2f}{}{}'.format(
-                    val_map12, val_map10,
+                print('  Val mAP12@1: {:0.2f} Val mAP10@1: {:0.2f} | '
+                      'mAP12@0.5: {:0.2f} mAP10@0.5: {:0.2f}{}{}'.format(
+                    val_map12, val_map10, val_map12_05, val_map10_05,
                     ' | New best mAP12!' if better_map12 else '',
                     ' | New best mAP10!' if better_map10 else '',
                 ))
 
                 wandb_log['val_map12'] = val_map12
                 wandb_log['val_map10'] = val_map10
+                wandb_log['val_map12@0.5'] = val_map12_05
+                wandb_log['val_map10@0.5'] = val_map10_05
 
                 if args.save_dir is not None and not args.dry_run:
                     if better_map12:
@@ -267,35 +275,47 @@ def main(args):
         print(f'\n--- Evaluating {ckpt_name} (epoch {best_epochs[ckpt_name]}) ---')
         model.load(torch.load(ckpt_path))
 
-        map_score, ap_score = evaluate(model, test_data, nms_window=5)
+        test_results = evaluate(model, test_data, nms_window=5)
 
-        # Report results per-class in table
-        table = []
-        for i, class_name in enumerate(class_names):
-            table.append([class_name, f"{ap_score[i]*100:.2f}"])
-        print(tabulate(table, ["Class", "Average Precision"], tablefmt="grid"))
+        ap_score_1 = test_results[1.0]['AP_per_class']
+        map12_1 = float(test_results[1.0]['mAP'] * 100)
+        map10_1 = float(np.mean(ap_score_1[mask_10]) * 100)
 
-        map12 = float(map_score * 100)
-        map10 = float(np.mean(ap_score[mask_10]) * 100)
+        ap_score_05 = test_results[0.5]['AP_per_class']
+        map12_05 = float(test_results[0.5]['mAP'] * 100)
+        map10_05 = float(np.mean(ap_score_05[mask_10]) * 100)
+
+        # Per-class AP at delta = 1s
+        table = [[name, f"{ap_score_1[i]*100:.2f}", f"{ap_score_05[i]*100:.2f}"]
+                 for i, name in enumerate(class_names)]
+        print(tabulate(table, ["Class", "AP @1s", "AP @0.5s"], tablefmt="grid"))
 
         avg_table = [
-            ["mAP@12 (all)", f"{map12:.2f}"],
-            ["mAP@10 (excl. FREE KICK & GOAL)", f"{map10:.2f}"],
+            ["mAP@12 (all) @1s",                  f"{map12_1:.2f}"],
+            ["mAP@10 (excl. FREE KICK & GOAL) @1s", f"{map10_1:.2f}"],
+            ["mAP@12 (all) @0.5s",                f"{map12_05:.2f}"],
+            ["mAP@10 (excl. FREE KICK & GOAL) @0.5s", f"{map10_05:.2f}"],
         ]
         print(tabulate(avg_table, ["", "Average Precision"], tablefmt="grid"))
 
         all_results[ckpt_name] = {
-            'mAP12': map12,
-            'mAP10': map10,
-            'per_class_AP': {name: float(ap_score[i] * 100) for i, name in enumerate(class_names)},
+            'mAP12': map12_1,
+            'mAP10': map10_1,
+            'mAP12@0.5': map12_05,
+            'mAP10@0.5': map10_05,
+            'per_class_AP': {name: float(ap_score_1[i] * 100) for i, name in enumerate(class_names)},
+            'per_class_AP@0.5': {name: float(ap_score_05[i] * 100) for i, name in enumerate(class_names)},
             'best_epoch': best_epochs[ckpt_name],
         }
 
-        wandb_final[f'{ckpt_name}/mAP12'] = map12
-        wandb_final[f'{ckpt_name}/mAP10'] = map10
+        wandb_final[f'{ckpt_name}/mAP12'] = map12_1
+        wandb_final[f'{ckpt_name}/mAP10'] = map10_1
+        wandb_final[f'{ckpt_name}/mAP12@0.5'] = map12_05
+        wandb_final[f'{ckpt_name}/mAP10@0.5'] = map10_05
         wandb_final[f'{ckpt_name}/best_epoch'] = best_epochs[ckpt_name]
         for i, name in enumerate(class_names):
-            wandb_final[f'{ckpt_name}/AP/{name}'] = float(ap_score[i] * 100)
+            wandb_final[f'{ckpt_name}/AP/{name}'] = float(ap_score_1[i] * 100)
+            wandb_final[f'{ckpt_name}/AP@0.5/{name}'] = float(ap_score_05[i] * 100)
 
     if not args.dry_run:
         store_json(os.path.join(args.save_dir, 'results.json'), all_results, pretty=True)

@@ -127,6 +127,85 @@ class TCNNeck(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# U-Net (1-D temporal)
+# ---------------------------------------------------------------------------
+
+class _DoubleConv1d(nn.Module):
+    """Two conv + BN + ReLU, preserves length."""
+
+    def __init__(self, in_ch, out_ch, kernel_size=3, dropout=0.0):
+        super().__init__()
+        padding = kernel_size // 2
+        self._conv1 = nn.Conv1d(in_ch, out_ch, kernel_size, padding=padding)
+        self._norm1 = nn.BatchNorm1d(out_ch)
+        self._conv2 = nn.Conv1d(out_ch, out_ch, kernel_size, padding=padding)
+        self._norm2 = nn.BatchNorm1d(out_ch)
+        self._dropout = nn.Dropout(dropout)
+
+    def forward(self, x):                             # (B, C, T)
+        x = F.relu(self._norm1(self._conv1(x)))
+        x = self._dropout(x)
+        x = F.relu(self._norm2(self._conv2(x)))
+        return x
+
+
+class UNetNeck(nn.Module):
+    """
+    1-D U-Net over the temporal dimension (channel width preserved).
+
+    Input/output: (B, T, D). At each encoder level T halves via max-pool and
+    a DoubleConv is applied; the bottleneck sees T / 2**num_levels. Decoder
+    upsamples with linear interpolation, concatenates the encoder skip
+    connection, and applies a DoubleConv. out_dim == feat_dim.
+
+    With clip_len=50 and num_levels=2 the bottleneck runs at T=12 frames
+    (receptive field covers the full clip through the pyramid).
+
+    Parameters (neck_parameters):
+        num_levels   int   encoder/decoder depth (default: 2)
+        kernel_size  int   conv kernel size (default: 3)
+        dropout      float per-block dropout (default: 0.0)
+    """
+
+    def __init__(self, feat_dim, num_levels=2, kernel_size=3, dropout=0.0):
+        super().__init__()
+        self._out_dim = feat_dim
+
+        self._enc = nn.ModuleList([
+            _DoubleConv1d(feat_dim, feat_dim, kernel_size, dropout)
+            for _ in range(num_levels)
+        ])
+        self._bottleneck = _DoubleConv1d(feat_dim, feat_dim, kernel_size, dropout)
+        self._dec = nn.ModuleList([
+            _DoubleConv1d(feat_dim * 2, feat_dim, kernel_size, dropout)
+            for _ in range(num_levels)
+        ])
+
+    def forward(self, x):                             # (B, T, D)
+        x = x.permute(0, 2, 1)                        # (B, D, T)
+
+        skips = []
+        for enc in self._enc:
+            x = enc(x)
+            skips.append(x)
+            x = F.max_pool1d(x, 2)
+
+        x = self._bottleneck(x)
+
+        for dec, skip in zip(self._dec, reversed(skips)):
+            x = F.interpolate(x, size=skip.shape[-1],
+                              mode='linear', align_corners=False)
+            x = torch.cat([x, skip], dim=1)
+            x = dec(x)
+
+        return x.permute(0, 2, 1)                    # (B, T, D)
+
+    @property
+    def out_dim(self):
+        return self._out_dim
+
+
+# ---------------------------------------------------------------------------
 # Transformer
 # ---------------------------------------------------------------------------
 
@@ -199,6 +278,7 @@ _NECK_REGISTRY = {
     'gru':         GRUNeck,
     'tcn':         TCNNeck,
     'transformer': TransformerNeck,
+    'unet':        UNetNeck,
 }
 
 

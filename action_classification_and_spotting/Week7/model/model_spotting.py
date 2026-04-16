@@ -159,6 +159,10 @@ class Model(BaseRGBModel):
         self._num_classes = args.num_classes
         self._focal_gamma = getattr(args, 'focal_gamma', 0.0)
         self._focal_alpha = getattr(args, 'focal_alpha', 5.0)
+        self._label_mode = getattr(args, 'label_mode', 'onehot')
+        self._label_sigma = float(getattr(args, 'label_sigma', 1.0))
+        assert self._label_mode in ('onehot', 'gaussian'), \
+            f"Unknown label_mode '{self._label_mode}'"
 
     def _loss(self, pred, label, weights):
         """Weighted cross-entropy, optionally with focal modulation."""
@@ -171,6 +175,38 @@ class Model(BaseRGBModel):
         focal_weight = (1.0 - p_t) ** self._focal_gamma                 # (N,)
         ce = F.nll_loss(log_p, label, weight=weights, reduction='none') # (N,)
         return (focal_weight * ce).mean()
+
+    def _gaussian_targets(self, labels):
+        """
+        Build per-frame soft targets by placing a Gaussian bump around every
+        event. labels: (B, T) long, values in [0, num_classes] (0=background).
+        Returns (B, T, num_classes+1) float targets summing to 1 per frame.
+        """
+        B, T = labels.shape
+        C = self._num_classes + 1
+        device = labels.device
+        targets = torch.zeros(B, T, C, device=device, dtype=torch.float32)
+
+        t_range = torch.arange(T, device=device, dtype=torch.float32)
+        two_sigma_sq = 2.0 * self._label_sigma * self._label_sigma
+
+        # Iterate only over event positions (sparse).
+        event_positions = (labels > 0).nonzero(as_tuple=False)  # (N, 2)
+        for b, t0 in event_positions.tolist():
+            c = int(labels[b, t0].item())
+            bump = torch.exp(-((t_range - t0) ** 2) / two_sigma_sq)
+            targets[b, :, c] = torch.maximum(targets[b, :, c], bump)
+
+        # Background class fills the leftover probability mass.
+        fg_sum = targets[:, :, 1:].sum(dim=-1).clamp(max=1.0)
+        targets[:, :, 0] = 1.0 - fg_sum
+        return targets
+
+    def _soft_ce_loss(self, pred, targets, weights):
+        """Weighted soft cross-entropy. pred and targets: (N, C); weights: (C,)."""
+        log_p = F.log_softmax(pred, dim=-1)
+        per_sample = -(targets * log_p * weights.unsqueeze(0)).sum(dim=-1)
+        return per_sample.mean()
 
     def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None):
 
@@ -195,10 +231,16 @@ class Model(BaseRGBModel):
                 label = label.to(self.device).long()
 
                 with torch.cuda.amp.autocast():
-                    pred = self._model(frame)
-                    pred = pred.view(-1, self._num_classes + 1) # B*T, num_classes
-                    label = label.view(-1) # B*T
-                    loss = self._loss(pred, label, weights)
+                    pred = self._model(frame)                              # (B, T, C+1)
+                    if self._label_mode == 'gaussian':
+                        soft_targets = self._gaussian_targets(label)       # (B, T, C+1)
+                        pred = pred.view(-1, self._num_classes + 1)
+                        soft_targets = soft_targets.view(-1, self._num_classes + 1)
+                        loss = self._soft_ce_loss(pred, soft_targets, weights)
+                    else:
+                        pred = pred.view(-1, self._num_classes + 1)
+                        label = label.view(-1)
+                        loss = self._loss(pred, label, weights)
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss,
