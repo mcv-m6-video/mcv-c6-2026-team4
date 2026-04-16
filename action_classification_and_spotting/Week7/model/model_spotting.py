@@ -1,0 +1,229 @@
+"""
+File containing the main model.
+"""
+
+#Standard imports
+import torch
+from torch import nn
+import timm
+import torchvision.transforms as T
+from contextlib import nullcontext
+from tqdm import tqdm
+import torch.nn.functional as F
+
+
+#Local imports
+from model.modules import BaseRGBModel, FCLayers, step
+from model.neck import create_neck
+
+
+_CLIP_ARCHS = {
+    'clip_vitb32': ('ViT-B-32', 'openai'),
+    'clip_vitb16': ('ViT-B-16', 'openai'),
+    'clip_vitl14': ('ViT-L-14', 'openai'),
+    'clip_rn50':   ('RN50',     'openai'),
+}
+
+_TIMM_ALIASES = {
+    'rny002': 'regnety_002',
+    'rny004': 'regnety_004',
+    'rny008': 'regnety_008',
+    'rny016': 'regnety_016',
+    'rny032': 'regnety_032',
+    'rny064': 'regnety_064',
+}
+
+
+def _build_backbone(arch, freeze=False):
+    if arch in _CLIP_ARCHS:
+        import open_clip
+        clip_model, _ = open_clip.create_model_and_transform(*_CLIP_ARCHS[arch])
+        model = clip_model.visual.float()
+        feat_dim = clip_model.visual.output_dim
+        freeze = True  # CLIP backbone is always frozen
+    else:
+        timm_name = _TIMM_ALIASES.get(arch, arch)
+        model = timm.create_model(timm_name, pretrained=True, num_classes=0)
+        feat_dim = model.num_features
+
+    if freeze:
+        for p in model.parameters():
+            p.requires_grad = False
+
+    return model, feat_dim
+
+
+class Model(BaseRGBModel):
+
+    class Impl(nn.Module):
+
+        def __init__(self, args = None):
+            super().__init__()
+            self._feature_arch = args.feature_arch
+
+            self._features, self._d = _build_backbone(
+                self._feature_arch,
+                freeze=getattr(args, 'freeze_backbone', False),
+            )
+
+            # Temporal neck
+            self._neck, neck_out_dim = create_neck(
+                getattr(args, 'neck_architecture', 'identity'),
+                self._d,
+                getattr(args, 'neck_parameters', None),
+            )
+
+            # MLP for classification
+            self._fc = FCLayers(neck_out_dim, args.num_classes+1) # +1 for background class (we now perform per-frame classification with softmax, therefore we have the extra background class)
+
+            #Augmentations and crop
+            self.augmentation = T.Compose([
+                T.RandomApply([T.ColorJitter(hue = 0.2)], p = 0.25),
+                T.RandomApply([T.ColorJitter(saturation = (0.7, 1.2))], p = 0.25),
+                T.RandomApply([T.ColorJitter(brightness = (0.7, 1.2))], p = 0.25),
+                T.RandomApply([T.ColorJitter(contrast = (0.7, 1.2))], p = 0.25),
+                T.RandomApply([T.GaussianBlur(5)], p = 0.25),
+                T.RandomHorizontalFlip(),
+            ])
+
+            # CLIP uses its own normalization stats; everything else uses ImageNet
+            if self._feature_arch.startswith('clip_'):
+                self.standarization = T.Normalize(
+                    mean=(0.48145466, 0.4578275, 0.40821073),
+                    std=(0.26862954, 0.26130258, 0.27577711))
+            else:
+                self.standarization = T.Normalize(
+                    mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+
+            # CLIP ViT models require 224x224 input
+            self._clip_vit_resize = None
+            if self._feature_arch in ('clip_vitb32', 'clip_vitb16', 'clip_vitl14'):
+                self._clip_vit_resize = T.Resize((224, 224))
+
+        def forward(self, x):
+            x = self.normalize(x) #Normalize to 0-1
+            batch_size, clip_len, channels, height, width = x.shape #B, T, C, H, W
+
+            if self.training:
+                x = self.augment(x) #augmentation per-batch
+
+            x = self.standarize(x) #standarization
+
+            frames = x.view(-1, channels, height, width)
+
+            if self._clip_vit_resize is not None:
+                frames = self._clip_vit_resize(frames)
+
+            if self._feature_arch.startswith('clip_'):
+                im_feat = self._features(frames).float()
+            else:
+                im_feat = self._features(frames)
+
+            im_feat = im_feat.reshape(batch_size, clip_len, self._d) #B, T, D
+
+            # Temporal neck: (B, T, D) -> (B, T, D')
+            im_feat = self._neck(im_feat)
+
+            #MLP
+            im_feat = self._fc(im_feat) #B, T, num_classes+1
+
+            return im_feat 
+        
+        def normalize(self, x):
+            return x / 255.
+        
+        def augment(self, x):
+            for i in range(x.shape[0]):
+                x[i] = self.augmentation(x[i])
+            return x
+
+        def standarize(self, x):
+            for i in range(x.shape[0]):
+                x[i] = self.standarization(x[i])
+            return x
+
+        def print_stats(self):
+            print('Model params:',
+                sum(p.numel() for p in self.parameters()))
+
+    def __init__(self, args=None):
+        self.device = "cpu"
+        if torch.cuda.is_available() and ("device" in args) and (args.device == "cuda"):
+            self.device = "cuda"
+
+        self._model = Model.Impl(args=args)
+        self._model.print_stats()
+        self._args = args
+
+        self._model.to(self.device)
+        self._num_classes = args.num_classes
+        self._focal_gamma = getattr(args, 'focal_gamma', 0.0)
+        self._focal_alpha = getattr(args, 'focal_alpha', 5.0)
+
+    def _loss(self, pred, label, weights):
+        """Weighted cross-entropy, optionally with focal modulation."""
+        if self._focal_gamma == 0.0:
+            return F.cross_entropy(pred, label, weight=weights, reduction='mean')
+
+        # Focal loss: CE * (1 - p_t)^gamma, with per-class weights playing the alpha role
+        log_p = F.log_softmax(pred, dim=-1)                             # (N, C)
+        p_t = torch.exp(log_p.gather(1, label.unsqueeze(1))).squeeze(1) # (N,)
+        focal_weight = (1.0 - p_t) ** self._focal_gamma                 # (N,)
+        ce = F.nll_loss(log_p, label, weight=weights, reduction='none') # (N,)
+        return (focal_weight * ce).mean()
+
+    def epoch(self, loader, optimizer=None, scaler=None, lr_scheduler=None):
+
+        if optimizer is None:
+            inference = True
+            self._model.eval()
+        else:
+            inference = False
+            optimizer.zero_grad()
+            self._model.train()
+
+        weights = torch.tensor(
+            [1.0] + [self._focal_alpha] * self._num_classes,
+            dtype=torch.float32,
+        ).to(self.device)
+
+        epoch_loss = 0.
+        with torch.no_grad() if optimizer is None else nullcontext():
+            for batch_idx, batch in enumerate(tqdm(loader)):
+                frame = batch['frame'].to(self.device).float()
+                label = batch['label']
+                label = label.to(self.device).long()
+
+                with torch.cuda.amp.autocast():
+                    pred = self._model(frame)
+                    pred = pred.view(-1, self._num_classes + 1) # B*T, num_classes
+                    label = label.view(-1) # B*T
+                    loss = self._loss(pred, label, weights)
+
+                if optimizer is not None:
+                    step(optimizer, scaler, loss,
+                        lr_scheduler=lr_scheduler)
+
+                epoch_loss += loss.detach().item()
+
+        return epoch_loss / len(loader)     # Avg loss
+
+    def predict(self, seq):
+
+        if not isinstance(seq, torch.Tensor):
+            seq = torch.FloatTensor(seq)
+        if len(seq.shape) == 4: # (L, C, H, W)
+            seq = seq.unsqueeze(0)
+        if seq.device != self.device:
+            seq = seq.to(self.device)
+        seq = seq.float()
+
+        self._model.eval()
+        with torch.no_grad():
+            with torch.cuda.amp.autocast():
+                pred = self._model(seq)
+
+            # apply sigmoid
+            pred = torch.softmax(pred, dim=-1)
+            
+            return pred.cpu().numpy()
