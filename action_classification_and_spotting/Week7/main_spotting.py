@@ -86,7 +86,7 @@ def main(args):
     args = update_args(args, config)
 
     wandb.init(
-        project='action-spotting',
+        project='action-spotting-final',
         name=args.model,
         config={**config, 'seed': args.seed},
         mode='disabled' if args.dry_run else 'online',
