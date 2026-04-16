@@ -151,38 +151,44 @@ class _DoubleConv1d(nn.Module):
 
 class UNetNeck(nn.Module):
     """
-    1-D U-Net over the temporal dimension (channel width preserved).
+    1-D U-Net over the temporal dimension with constant channel width.
 
-    Input/output: (B, T, D). At each encoder level T halves via max-pool and
-    a DoubleConv is applied; the bottleneck sees T / 2**num_levels. Decoder
-    upsamples with linear interpolation, concatenates the encoder skip
-    connection, and applies a DoubleConv. out_dim == feat_dim.
-
-    With clip_len=50 and num_levels=2 the bottleneck runs at T=12 frames
-    (receptive field covers the full clip through the pyramid).
+    An input 1x1 conv projects feat_dim -> hidden_dim (skipped when equal).
+    Encoder/decoder run at constant hidden_dim; decoder concat doubles the
+    channels momentarily (2*hidden_dim -> hidden_dim via DoubleConv).
+    Output: (B, T, hidden_dim).
 
     Parameters (neck_parameters):
+        hidden_dim   int   internal + output channel width (default: feat_dim)
         num_levels   int   encoder/decoder depth (default: 2)
         kernel_size  int   conv kernel size (default: 3)
         dropout      float per-block dropout (default: 0.0)
     """
 
-    def __init__(self, feat_dim, num_levels=2, kernel_size=3, dropout=0.0):
+    def __init__(self, feat_dim, hidden_dim=None, num_levels=2,
+                 kernel_size=3, dropout=0.0):
         super().__init__()
-        self._out_dim = feat_dim
+        hidden_dim = hidden_dim or feat_dim
+
+        self._proj_in = (nn.Conv1d(feat_dim, hidden_dim, 1)
+                         if hidden_dim != feat_dim else nn.Identity())
 
         self._enc = nn.ModuleList([
-            _DoubleConv1d(feat_dim, feat_dim, kernel_size, dropout)
+            _DoubleConv1d(hidden_dim, hidden_dim, kernel_size, dropout)
             for _ in range(num_levels)
         ])
-        self._bottleneck = _DoubleConv1d(feat_dim, feat_dim, kernel_size, dropout)
+        self._bottleneck = _DoubleConv1d(
+            hidden_dim, hidden_dim, kernel_size, dropout)
         self._dec = nn.ModuleList([
-            _DoubleConv1d(feat_dim * 2, feat_dim, kernel_size, dropout)
+            _DoubleConv1d(hidden_dim * 2, hidden_dim, kernel_size, dropout)
             for _ in range(num_levels)
         ])
+
+        self._out_dim = hidden_dim
 
     def forward(self, x):                             # (B, T, D)
         x = x.permute(0, 2, 1)                        # (B, D, T)
+        x = self._proj_in(x)                           # (B, hidden_dim, T)
 
         skips = []
         for enc in self._enc:
@@ -198,7 +204,7 @@ class UNetNeck(nn.Module):
             x = torch.cat([x, skip], dim=1)
             x = dec(x)
 
-        return x.permute(0, 2, 1)                    # (B, T, D)
+        return x.permute(0, 2, 1)                    # (B, T, hidden_dim)
 
     @property
     def out_dim(self):

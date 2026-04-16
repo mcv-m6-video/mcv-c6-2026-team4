@@ -15,7 +15,7 @@
   "dataset": "soccernetball",
   "epoch_num_frames": 500000,
   "feature_arch": "rny008",
-  "learning_rate": 0.0008,
+  "learning_rate": 0.0004,
   "num_classes": 12,
   "num_epochs": 35,
   "warm_up_epochs": 3,
@@ -24,6 +24,7 @@
   "num_workers": 4,
   "neck_architecture": "unet",
   "neck_parameters": {
+    "hidden_dim": 440,
     "num_levels": 2,
     "kernel_size": 3,
     "dropout": 0.1
