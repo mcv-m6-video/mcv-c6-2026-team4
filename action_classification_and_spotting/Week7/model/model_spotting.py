@@ -15,6 +15,7 @@ import torch.nn.functional as F
 #Local imports
 from model.modules import BaseRGBModel, FCLayers, step
 from model.neck import create_neck
+from model.backbone_3d import VIDEO_3D_ARCHS, build_video_backbone
 
 
 _CLIP_ARCHS = {
@@ -35,6 +36,13 @@ _TIMM_ALIASES = {
 
 
 def _build_backbone(arch, freeze=False):
+    if arch in VIDEO_3D_ARCHS:
+        model, feat_dim = build_video_backbone(arch, pretrained=True)
+        if freeze:
+            for p in model.parameters():
+                p.requires_grad = False
+        return model, feat_dim
+
     if arch in _CLIP_ARCHS:
         import open_clip
         clip_model, _ = open_clip.create_model_and_transform(*_CLIP_ARCHS[arch])
@@ -66,6 +74,10 @@ class Model(BaseRGBModel):
                 freeze=getattr(args, 'freeze_backbone', False),
             )
 
+            # Flag: True when using a 3-D video backbone (X3D, R3D, SlowFast).
+            # Controls the forward path (no per-frame flatten for 3-D models).
+            self._is_3d = self._feature_arch in VIDEO_3D_ARCHS
+
             # Temporal neck
             self._neck, neck_out_dim = create_neck(
                 getattr(args, 'neck_architecture', 'identity'),
@@ -86,11 +98,17 @@ class Model(BaseRGBModel):
                 T.RandomHorizontalFlip(),
             ])
 
-            # CLIP uses its own normalization stats; everything else uses ImageNet
+            # Normalization stats per backbone family:
+            #   CLIP   -> CLIP stats
+            #   3-D    -> Kinetics-400 stats (models pretrained on Kinetics)
+            #   2-D    -> ImageNet stats
             if self._feature_arch.startswith('clip_'):
                 self.standarization = T.Normalize(
                     mean=(0.48145466, 0.4578275, 0.40821073),
                     std=(0.26862954, 0.26130258, 0.27577711))
+            elif self._is_3d:
+                self.standarization = T.Normalize(
+                    mean=(0.45, 0.45, 0.45), std=(0.225, 0.225, 0.225))
             else:
                 self.standarization = T.Normalize(
                     mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
@@ -109,17 +127,24 @@ class Model(BaseRGBModel):
 
             x = self.standarize(x) #standarization
 
-            frames = x.view(-1, channels, height, width)
-
-            if self._clip_vit_resize is not None:
-                frames = self._clip_vit_resize(frames)
-
-            if self._feature_arch.startswith('clip_'):
-                im_feat = self._features(frames).float()
+            if self._is_3d:
+                # 3-D backbone expects (B, C, T, H, W).
+                # Augmentation/standardization worked on (B, T, C, H, W); permute now.
+                x_video = x.permute(0, 2, 1, 3, 4).contiguous()  # (B, C, T, H, W)
+                im_feat = self._features(x_video)                 # (B, T', D)
             else:
-                im_feat = self._features(frames)
+                # 2-D backbone: flatten batch and time into a single leading dim.
+                frames = x.view(-1, channels, height, width)
 
-            im_feat = im_feat.reshape(batch_size, clip_len, self._d) #B, T, D
+                if self._clip_vit_resize is not None:
+                    frames = self._clip_vit_resize(frames)
+
+                if self._feature_arch.startswith('clip_'):
+                    im_feat = self._features(frames).float()
+                else:
+                    im_feat = self._features(frames)
+
+                im_feat = im_feat.reshape(batch_size, clip_len, self._d) #B, T, D
 
             # Temporal neck: (B, T, D) -> (B, T, D')
             im_feat = self._neck(im_feat)
@@ -127,7 +152,7 @@ class Model(BaseRGBModel):
             #MLP
             im_feat = self._fc(im_feat) #B, T, num_classes+1
 
-            return im_feat 
+            return im_feat
         
         def normalize(self, x):
             return x / 255.
