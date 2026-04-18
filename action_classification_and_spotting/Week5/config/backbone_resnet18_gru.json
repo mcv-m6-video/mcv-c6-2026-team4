@@ -1,20 +1,20 @@
 {
-   "frame_dir": "/data/storage/users/priubrogent/soccer_frames/398x224",
+  "frame_dir": "/data/storage/users/priubrogent/soccer_frames/398x224",
   "save_dir": "/data/storage/users/priubrogent/soccer_savedata",
   "labels_dir": "/data/storage/users/priubrogent/soccer/soccer",
   "store_mode": "load",
   "task": "classification",
-  "batch_size": 1,
-  "clip_len": 100,
-  "stride": 3,
+  "batch_size": 4,
+  "clip_len": 50,
+  "stride": 2,
   "dataset": "soccernetball",
   "epoch_num_frames": 500000,
-  "feature_arch": "rny004",
-  "neck_architecture": "gru",
+  "feature_arch": "resnet18",
+   "neck_architecture": "gru",
   "neck_parameters": {
-    "num_layers": 1,
+    "num_layers": 2,
     "bidirectional": true,
-    "dropout": 0.0
+    "dropout": 0.3
   },
   "loss": "focal",
   "loss_parameters": {
@@ -23,7 +23,7 @@
   },
   "learning_rate": 0.0008,
   "num_classes": 12,
-  "num_epochs": 20,
+  "num_epochs": 35,
   "warm_up_epochs": 3,
   "only_test": false,
   "device": "cuda",
