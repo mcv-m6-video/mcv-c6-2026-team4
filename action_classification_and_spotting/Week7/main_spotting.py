@@ -60,6 +60,7 @@ def update_args(args, config):
     args.focal_alpha = config.get('focal_alpha', 5.0)
     args.label_mode = config.get('label_mode', 'onehot')
     args.label_sigma = config.get('label_sigma', 1.0)
+    args.early_stop_patience = config.get('early_stop_patience', None)
 
     return args
 
@@ -148,9 +149,12 @@ def main(args):
         best_loss = float('inf')
         best_map12_val = -float('inf')
         best_map10_val = -float('inf')
+        best_map12_05_val = -float('inf')
+        best_map10_05_val = -float('inf')
         best_epoch_loss = 0
         best_epoch_map12 = 0
         best_epoch_map10 = 0
+        last_improved = 0
         epoch = 0
         train_start_time = time.time()
 
@@ -180,6 +184,7 @@ def main(args):
             if better_loss:
                 best_loss = val_loss
                 best_epoch_loss = epoch
+                last_improved = epoch
 
             #Printing info epoch
             print('[Epoch {}] Train loss: {:0.5f} Val loss: {:0.5f} LR: {:.2e} '
@@ -204,8 +209,10 @@ def main(args):
                 val_map12_05 = float(val_results[0.5]['mAP'] * 100)
                 val_map10_05 = float(np.mean(val_results[0.5]['AP_per_class'][mask_10]) * 100)
 
-                better_map12 = val_map12 > best_map12_val
-                better_map10 = val_map10 > best_map10_val
+                better_map12    = val_map12    > best_map12_val
+                better_map10    = val_map10    > best_map10_val
+                better_map12_05 = val_map12_05 > best_map12_05_val
+                better_map10_05 = val_map10_05 > best_map10_05_val
 
                 if better_map12:
                     best_map12_val = val_map12
@@ -213,6 +220,13 @@ def main(args):
                 if better_map10:
                     best_map10_val = val_map10
                     best_epoch_map10 = epoch
+                if better_map12_05:
+                    best_map12_05_val = val_map12_05
+                if better_map10_05:
+                    best_map10_05_val = val_map10_05
+
+                if better_map12 or better_map10 or better_map12_05 or better_map10_05:
+                    last_improved = epoch
 
                 print('  Val mAP12@1: {:0.2f} Val mAP10@1: {:0.2f} | '
                       'mAP12@0.5: {:0.2f} mAP10@0.5: {:0.2f}{}{}'.format(
@@ -246,6 +260,12 @@ def main(args):
 
                 if better_loss:
                     torch.save(model.state_dict(), os.path.join(ckpt_dir, 'checkpoint_best_loss.pt'))
+
+            if (args.early_stop_patience is not None
+                    and epoch - last_improved >= args.early_stop_patience):
+                print(f'Early stopping at epoch {epoch}: no improvement in '
+                      f'{args.early_stop_patience} epochs (last improved: {last_improved}).')
+                break
 
         total_train_time = time.time() - train_start_time
 
