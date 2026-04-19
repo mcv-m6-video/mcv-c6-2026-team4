@@ -334,8 +334,8 @@ class Model(BaseRGBModel):
 
                     if teacher_logits is not None:
                         kd_loss = self._kd_loss(
-                            pred.view(-1, self._num_classes + 1),
-                            teacher_logits.view(-1, self._num_classes + 1),
+                            pred.reshape(-1, self._num_classes + 1),
+                            teacher_logits.reshape(-1, self._num_classes + 1),
                             self._kd_temperature,
                         )
                         loss = (1 - self._kd_alpha) * hard_loss + self._kd_alpha * kd_loss
