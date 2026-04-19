@@ -212,6 +212,171 @@ class UNetNeck(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# Attention-Bottleneck U-Net (1-D temporal)
+# ---------------------------------------------------------------------------
+
+class AttentionBottleneckUNetNeck(nn.Module):
+    """
+    1-D U-Net where the bottleneck DoubleConv is replaced with multi-head
+    self-attention. At num_levels=2 the bottleneck T = T_input/4 (≈12 frames
+    for clip_len=50), at num_levels=3 T = T_input/8 (≈6 frames). Attention
+    is cheap at these lengths while capturing global temporal context that
+    local convolutions miss.
+
+    Parameters (neck_parameters):
+        hidden_dim   int   internal + output channel width (default: feat_dim)
+        num_levels   int   encoder/decoder depth (default: 2)
+        kernel_size  int   conv kernel size in encoder/decoder (default: 3)
+        dropout      float per-block dropout (default: 0.0)
+        num_heads    int   attention heads at bottleneck (default: 4)
+        attn_layers  int   transformer layers at bottleneck (default: 1)
+    """
+
+    def __init__(self, feat_dim, hidden_dim=None, num_levels=2,
+                 kernel_size=3, dropout=0.0, num_heads=4, attn_layers=1):
+        super().__init__()
+        hidden_dim = hidden_dim or feat_dim
+
+        self._proj_in = (nn.Conv1d(feat_dim, hidden_dim, 1)
+                         if hidden_dim != feat_dim else nn.Identity())
+
+        self._enc = nn.ModuleList([
+            _DoubleConv1d(hidden_dim, hidden_dim, kernel_size, dropout)
+            for _ in range(num_levels)
+        ])
+
+        encoder_layer = nn.TransformerEncoderLayer(
+            d_model=hidden_dim,
+            nhead=num_heads,
+            dim_feedforward=hidden_dim * 4,
+            dropout=dropout,
+            batch_first=True,
+            norm_first=True,
+        )
+        self._bottleneck = nn.TransformerEncoder(encoder_layer, num_layers=attn_layers)
+
+        self._dec = nn.ModuleList([
+            _DoubleConv1d(hidden_dim * 2, hidden_dim, kernel_size, dropout)
+            for _ in range(num_levels)
+        ])
+
+        self._out_dim = hidden_dim
+
+    def forward(self, x):                             # (B, T, D)
+        x = x.permute(0, 2, 1)                        # (B, D, T)
+        x = self._proj_in(x)                           # (B, hidden_dim, T)
+
+        skips = []
+        for enc in self._enc:
+            x = enc(x)
+            skips.append(x)
+            x = F.max_pool1d(x, 2)
+
+        x = x.permute(0, 2, 1)                        # (B, T_bot, hidden_dim)
+        x = self._bottleneck(x)
+        x = x.permute(0, 2, 1)                        # (B, hidden_dim, T_bot)
+
+        for dec, skip in zip(self._dec, reversed(skips)):
+            x = F.interpolate(x, size=skip.shape[-1],
+                              mode='linear', align_corners=False)
+            x = torch.cat([x, skip], dim=1)
+            x = dec(x)
+
+        return x.permute(0, 2, 1)                    # (B, T, hidden_dim)
+
+    @property
+    def out_dim(self):
+        return self._out_dim
+
+
+# ---------------------------------------------------------------------------
+# TCN-block U-Net (1-D temporal)
+# ---------------------------------------------------------------------------
+
+class _TCNLevelBlock(nn.Module):
+    """Stack of dilated residual TCN blocks at a single U-Net level."""
+
+    def __init__(self, channels, kernel_size, dropout, num_dilations=3):
+        super().__init__()
+        self._blocks = nn.ModuleList([
+            _TCNBlock(channels, kernel_size, dilation=2 ** i, dropout=dropout)
+            for i in range(num_dilations)
+        ])
+
+    def forward(self, x):   # (B, C, T)
+        for block in self._blocks:
+            x = block(x)
+        return x
+
+
+class TCNUNetNeck(nn.Module):
+    """
+    1-D U-Net where each encoder/decoder level uses a dilated-TCN stack
+    instead of plain DoubleConv1d. With num_dilations=3 each level applies
+    dilations (1, 2, 4), giving a per-level RF of 1+2*(k-1)*7 frames before
+    the next max-pool halving. Combines the multi-scale hierarchy of U-Net
+    with the wide per-level receptive field of TCN.
+
+    Parameters (neck_parameters):
+        hidden_dim     int   internal + output channel width (default: feat_dim)
+        num_levels     int   encoder/decoder depth (default: 2)
+        kernel_size    int   conv kernel size (default: 3)
+        dropout        float per-block dropout (default: 0.0)
+        num_dilations  int   dilated blocks per level (default: 3, → dilations 1,2,4)
+    """
+
+    def __init__(self, feat_dim, hidden_dim=None, num_levels=2,
+                 kernel_size=3, dropout=0.0, num_dilations=3):
+        super().__init__()
+        hidden_dim = hidden_dim or feat_dim
+
+        self._proj_in = (nn.Conv1d(feat_dim, hidden_dim, 1)
+                         if hidden_dim != feat_dim else nn.Identity())
+
+        self._enc = nn.ModuleList([
+            _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations)
+            for _ in range(num_levels)
+        ])
+        self._bottleneck = _TCNLevelBlock(
+            hidden_dim, kernel_size, dropout, num_dilations)
+
+        # After skip-concat channels double; a 1x1 conv projects back before TCN.
+        self._dec = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(hidden_dim * 2, hidden_dim, 1),
+                _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations),
+            )
+            for _ in range(num_levels)
+        ])
+
+        self._out_dim = hidden_dim
+
+    def forward(self, x):                             # (B, T, D)
+        x = x.permute(0, 2, 1)                        # (B, D, T)
+        x = self._proj_in(x)
+
+        skips = []
+        for enc in self._enc:
+            x = enc(x)
+            skips.append(x)
+            x = F.max_pool1d(x, 2)
+
+        x = self._bottleneck(x)
+
+        for dec, skip in zip(self._dec, reversed(skips)):
+            x = F.interpolate(x, size=skip.shape[-1],
+                              mode='linear', align_corners=False)
+            x = torch.cat([x, skip], dim=1)
+            x = dec(x)
+
+        return x.permute(0, 2, 1)                    # (B, T, hidden_dim)
+
+    @property
+    def out_dim(self):
+        return self._out_dim
+
+
+# ---------------------------------------------------------------------------
 # Transformer
 # ---------------------------------------------------------------------------
 
@@ -285,6 +450,8 @@ _NECK_REGISTRY = {
     'tcn':         TCNNeck,
     'transformer': TransformerNeck,
     'unet':        UNetNeck,
+    'unet_attn':   AttentionBottleneckUNetNeck,
+    'unet_tcn':    TCNUNetNeck,
 }
 
 
