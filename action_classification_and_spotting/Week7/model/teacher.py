@@ -13,6 +13,7 @@ Usage:
 
 import sys
 import os
+import importlib.util
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -21,16 +22,67 @@ import torch.nn.functional as F
 # Either install it or point to the cloned repo.
 _TDEED_ROOT = os.environ.get(
     'TDEED_ROOT',
-    os.path.join(os.path.dirname(__file__), '..', '..', '..', '..', 'T-DEED'),
+    os.path.join(os.path.dirname(__file__), '..', '..', '..', 'T-DEED'),
 )
 
 
 def _import_tdeed():
-    """Import T-DEED model classes by temporarily adding its root to sys.path."""
-    if _TDEED_ROOT not in sys.path:
-        sys.path.insert(0, _TDEED_ROOT)
-    from model.model import TDEEDModel
-    return TDEEDModel
+    """
+    Import T-DEED model classes using importlib to avoid name collisions
+    with our local 'model' package.
+    """
+    tdeed_root = os.path.abspath(_TDEED_ROOT)
+
+    # Load T-DEED's model.modules first (dependency of model.model)
+    modules_path = os.path.join(tdeed_root, 'model', 'modules.py')
+    spec = importlib.util.spec_from_file_location('tdeed_modules', modules_path)
+    tdeed_modules = importlib.util.module_from_spec(spec)
+    sys.modules['tdeed_modules'] = tdeed_modules
+    spec.loader.exec_module(tdeed_modules)
+
+    # Load T-DEED's model.shift (dependency of model.model)
+    shift_path = os.path.join(tdeed_root, 'model', 'shift.py')
+    spec = importlib.util.spec_from_file_location('tdeed_shift', shift_path)
+    tdeed_shift = importlib.util.module_from_spec(spec)
+    sys.modules['tdeed_shift'] = tdeed_shift
+
+    # Load T-DEED's model.impl.gsm and model.impl.gsf (dependencies of shift)
+    for name in ('gsm', 'gsf'):
+        impl_path = os.path.join(tdeed_root, 'model', 'impl', f'{name}.py')
+        impl_spec = importlib.util.spec_from_file_location(f'tdeed_impl_{name}', impl_path)
+        impl_mod = importlib.util.module_from_spec(impl_spec)
+        sys.modules[f'tdeed_impl_{name}'] = impl_mod
+        impl_spec.loader.exec_module(impl_mod)
+
+    # Patch shift's imports to point to our loaded modules
+    # shift.py does: from model.impl.gsm import _GSM; from model.impl.gsf import _GSF
+    # We need to make those available under model.impl.gsm / model.impl.gsf
+    # Easiest: temporarily inject into sys.modules
+    sys.modules['model.impl'] = type(sys)('model.impl')
+    sys.modules['model.impl.gsm'] = sys.modules['tdeed_impl_gsm']
+    sys.modules['model.impl.gsf'] = sys.modules['tdeed_impl_gsf']
+
+    spec.loader.exec_module(tdeed_shift)
+
+    # Now load model.model, patching its imports
+    # model.model imports from model.modules and model.shift
+    sys.modules['model.modules'] = tdeed_modules
+    sys.modules['model.shift'] = tdeed_shift
+
+    model_path = os.path.join(tdeed_root, 'model', 'model.py')
+    spec = importlib.util.spec_from_file_location('tdeed_model', model_path)
+    tdeed_model = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(tdeed_model)
+
+    # Clean up: restore our own model.modules and model.shift
+    # by removing the overrides (Python will re-resolve from the package)
+    del sys.modules['model.modules']
+    del sys.modules['model.shift']
+    del sys.modules['model.impl']
+    del sys.modules['model.impl.gsm']
+    del sys.modules['model.impl.gsf']
+
+    return tdeed_model.TDEEDModel
 
 
 class TeacherWrapper(nn.Module):
@@ -71,7 +123,6 @@ class TeacherWrapper(nn.Module):
             x = frames
         else:
             # Temporally resample frames to match teacher's expected clip_len
-            # Use nearest-neighbor to avoid blending frames
             indices = torch.linspace(0, T_student - 1, T_teacher).long()
             x = frames[:, indices]
 
@@ -93,7 +144,6 @@ class TeacherWrapper(nn.Module):
 
         # Interpolate back to student temporal resolution if needed
         if logits.shape[1] != T_student:
-            # (B, T, C) -> (B, C, T) for interpolate -> (B, C, T') -> (B, T', C)
             logits = logits.permute(0, 2, 1)
             logits = F.interpolate(logits, size=T_student, mode='linear', align_corners=False)
             logits = logits.permute(0, 2, 1)
