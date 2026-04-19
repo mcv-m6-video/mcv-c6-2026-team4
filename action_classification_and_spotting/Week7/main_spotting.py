@@ -62,6 +62,16 @@ def update_args(args, config):
     args.label_sigma = config.get('label_sigma', 1.0)
     args.early_stop_patience = config.get('early_stop_patience', None)
 
+    # Knowledge distillation
+    args.kd_alpha = config.get('kd_alpha', 0.0)
+    args.kd_temperature = config.get('kd_temperature', 4.0)
+    args.teacher_checkpoint = config.get('teacher_checkpoint', None)
+    args.teacher_feature_arch = config.get('teacher_feature_arch', 'rny002_gsf')
+    args.teacher_clip_len = config.get('teacher_clip_len', 100)
+
+    # Mixup
+    args.mixup = config.get('mixup', False)
+
     return args
 
 def get_lr_scheduler(args, optimizer, num_steps_per_epoch):
@@ -132,6 +142,18 @@ def main(args):
     # Model
     model = Model(args=args)
 
+    # Load teacher for knowledge distillation
+    if args.teacher_checkpoint and args.kd_alpha > 0:
+        from model.teacher import load_teacher
+        teacher = load_teacher(
+            checkpoint_path=args.teacher_checkpoint,
+            num_classes=args.num_classes,
+            clip_len=args.teacher_clip_len,
+            feature_arch=args.teacher_feature_arch,
+            device=args.device,
+        )
+        model.set_teacher(teacher)
+
     optimizer, scaler = model.get_optimizer({'lr': args.learning_rate})
 
     best_epoch_loss = None
@@ -198,6 +220,7 @@ def main(args):
                 'lr': current_lr, 'epoch_time': epoch_time,
                 'peak_vram_mb': peak_vram_mb,
                 'epoch': epoch,
+                'kd_alpha': getattr(args, 'kd_alpha', 0.0),
             }
 
             # Evaluate mAP on validation set every map_eval_freq epochs

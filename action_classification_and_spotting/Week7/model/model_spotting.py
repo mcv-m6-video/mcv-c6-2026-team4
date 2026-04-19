@@ -16,6 +16,7 @@ import torch.nn.functional as F
 from model.modules import BaseRGBModel, FCLayers, step
 from model.neck import create_neck
 from model.backbone_3d import VIDEO_3D_ARCHS, build_video_backbone
+from model.shift import make_temporal_shift
 
 
 _CLIP_ARCHS = {
@@ -35,24 +36,40 @@ _TIMM_ALIASES = {
 }
 
 
-def _build_backbone(arch, freeze=False):
-    if arch in VIDEO_3D_ARCHS:
-        model, feat_dim = build_video_backbone(arch, pretrained=True)
+def _build_backbone(arch, freeze=False, clip_len=None):
+    # Check for temporal shift suffix (_gsf or _gsm)
+    shift_mode = None
+    base_arch = arch
+    if arch.endswith('_gsf'):
+        shift_mode = 'gsf'
+        base_arch = arch[:-4]
+    elif arch.endswith('_gsm'):
+        shift_mode = 'gsm'
+        base_arch = arch[:-4]
+
+    if base_arch in VIDEO_3D_ARCHS:
+        model, feat_dim = build_video_backbone(base_arch, pretrained=True)
         if freeze:
             for p in model.parameters():
                 p.requires_grad = False
         return model, feat_dim
 
-    if arch in _CLIP_ARCHS:
+    if base_arch in _CLIP_ARCHS:
         import open_clip
-        clip_model, _ = open_clip.create_model_and_transform(*_CLIP_ARCHS[arch])
+        clip_model, _ = open_clip.create_model_and_transform(*_CLIP_ARCHS[base_arch])
         model = clip_model.visual.float()
         feat_dim = clip_model.visual.output_dim
         freeze = True  # CLIP backbone is always frozen
     else:
-        timm_name = _TIMM_ALIASES.get(arch, arch)
+        timm_name = _TIMM_ALIASES.get(base_arch, base_arch)
         model = timm.create_model(timm_name, pretrained=True, num_classes=0)
         feat_dim = model.num_features
+
+    # Apply temporal shift modules (GSF/GSM) to the backbone
+    if shift_mode is not None:
+        assert clip_len is not None, \
+            f'clip_len is required for temporal shift mode "{shift_mode}"'
+        make_temporal_shift(model, clip_len, mode=shift_mode)
 
     if freeze:
         for p in model.parameters():
@@ -72,11 +89,13 @@ class Model(BaseRGBModel):
             self._features, self._d = _build_backbone(
                 self._feature_arch,
                 freeze=getattr(args, 'freeze_backbone', False),
+                clip_len=getattr(args, 'clip_len', None),
             )
 
             # Flag: True when using a 3-D video backbone (X3D, R3D, SlowFast).
             # Controls the forward path (no per-frame flatten for 3-D models).
-            self._is_3d = self._feature_arch in VIDEO_3D_ARCHS
+            _base_arch = self._feature_arch.replace('_gsf', '').replace('_gsm', '')
+            self._is_3d = _base_arch in VIDEO_3D_ARCHS
 
             # Temporal neck
             self._neck, neck_out_dim = create_neck(
@@ -189,6 +208,25 @@ class Model(BaseRGBModel):
         assert self._label_mode in ('onehot', 'gaussian'), \
             f"Unknown label_mode '{self._label_mode}'"
 
+        # Knowledge distillation settings
+        self._teacher = None
+        self._kd_alpha = float(getattr(args, 'kd_alpha', 0.0))  # 0 = no KD
+        self._kd_temperature = float(getattr(args, 'kd_temperature', 4.0))
+
+        # Mixup
+        self._mixup = getattr(args, 'mixup', False)
+
+    def set_teacher(self, teacher):
+        """Attach a frozen teacher model for knowledge distillation."""
+        self._teacher = teacher
+        print(f'[KD] Teacher attached. alpha={self._kd_alpha}, T={self._kd_temperature}')
+
+    def _kd_loss(self, student_logits, teacher_logits, temperature):
+        """KL-divergence distillation loss on softened predictions."""
+        s = F.log_softmax(student_logits / temperature, dim=-1)
+        t = F.softmax(teacher_logits / temperature, dim=-1)
+        return F.kl_div(s, t, reduction='batchmean') * (temperature ** 2)
+
     def _loss(self, pred, label, weights):
         """Weighted cross-entropy, optionally with focal modulation."""
         if self._focal_gamma == 0.0:
@@ -255,17 +293,54 @@ class Model(BaseRGBModel):
                 label = batch['label']
                 label = label.to(self.device).long()
 
+                # Mixup: blend pairs of samples with Beta(0.2, 0.2) weights
+                mixup_targets = None
+                if self._mixup and not inference and frame.shape[0] > 1:
+                    import random as _rnd
+                    B = frame.shape[0]
+                    C = self._num_classes + 1
+                    lam = [_rnd.betavariate(0.2, 0.2) for _ in range(B)]
+                    # Shuffle indices for pairing
+                    perm = torch.randperm(B)
+                    mixup_targets = torch.zeros(B, frame.shape[1], C,
+                                                device=self.device, dtype=torch.float32)
+                    for i in range(B):
+                        frame[i] = lam[i] * frame[i] + (1 - lam[i]) * frame[perm[i]]
+                        mixup_targets[i, range(frame.shape[1]), label[i]] += lam[i]
+                        mixup_targets[i, range(frame.shape[1]), label[perm[i]]] += (1 - lam[i])
+
                 with torch.cuda.amp.autocast():
                     pred = self._model(frame)                              # (B, T, C+1)
-                    if self._label_mode == 'gaussian':
+
+                    # Get teacher logits if distilling (only during training)
+                    teacher_logits = None
+                    if self._teacher is not None and not inference and self._kd_alpha > 0:
+                        teacher_logits = self._teacher.get_logits(frame)   # (B, T, C+1)
+
+                    if mixup_targets is not None:
+                        # Mixup produces soft targets directly
+                        pred_flat = pred.view(-1, self._num_classes + 1)
+                        soft_targets = mixup_targets.view(-1, self._num_classes + 1)
+                        hard_loss = self._soft_ce_loss(pred_flat, soft_targets, weights)
+                    elif self._label_mode == 'gaussian':
                         soft_targets = self._gaussian_targets(label)       # (B, T, C+1)
-                        pred = pred.view(-1, self._num_classes + 1)
+                        pred_flat = pred.view(-1, self._num_classes + 1)
                         soft_targets = soft_targets.view(-1, self._num_classes + 1)
-                        loss = self._soft_ce_loss(pred, soft_targets, weights)
+                        hard_loss = self._soft_ce_loss(pred_flat, soft_targets, weights)
                     else:
-                        pred = pred.view(-1, self._num_classes + 1)
-                        label = label.view(-1)
-                        loss = self._loss(pred, label, weights)
+                        pred_flat = pred.view(-1, self._num_classes + 1)
+                        label_flat = label.view(-1)
+                        hard_loss = self._loss(pred_flat, label_flat, weights)
+
+                    if teacher_logits is not None:
+                        kd_loss = self._kd_loss(
+                            pred.view(-1, self._num_classes + 1),
+                            teacher_logits.view(-1, self._num_classes + 1),
+                            self._kd_temperature,
+                        )
+                        loss = (1 - self._kd_alpha) * hard_loss + self._kd_alpha * kd_loss
+                    else:
+                        loss = hard_loss
 
                 if optimizer is not None:
                     step(optimizer, scaler, loss,
