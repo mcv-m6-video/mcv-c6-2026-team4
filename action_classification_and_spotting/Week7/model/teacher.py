@@ -30,59 +30,43 @@ def _import_tdeed():
     """
     Import T-DEED model classes using importlib to avoid name collisions
     with our local 'model' package.
+
+    Strategy: temporarily hijack sys.modules so that T-DEED's internal
+    `from model.X import ...` statements resolve to T-DEED's own files
+    instead of ours, then restore everything afterwards.
     """
     tdeed_root = os.path.abspath(_TDEED_ROOT)
 
-    # Load T-DEED's model.modules first (dependency of model.model)
-    modules_path = os.path.join(tdeed_root, 'model', 'modules.py')
-    spec = importlib.util.spec_from_file_location('tdeed_modules', modules_path)
-    tdeed_modules = importlib.util.module_from_spec(spec)
-    sys.modules['tdeed_modules'] = tdeed_modules
-    spec.loader.exec_module(tdeed_modules)
+    # --- 1. Save references to our own model.* modules ---
+    saved = {}
+    for key in list(sys.modules.keys()):
+        if key == 'model' or key.startswith('model.'):
+            saved[key] = sys.modules.pop(key)
 
-    # Load T-DEED's model.shift (dependency of model.model)
-    shift_path = os.path.join(tdeed_root, 'model', 'shift.py')
-    spec = importlib.util.spec_from_file_location('tdeed_shift', shift_path)
-    tdeed_shift = importlib.util.module_from_spec(spec)
-    sys.modules['tdeed_shift'] = tdeed_shift
+    try:
+        # --- 2. Add T-DEED root to sys.path so its imports work naturally ---
+        sys.path.insert(0, tdeed_root)
 
-    # Load T-DEED's model.impl.gsm and model.impl.gsf (dependencies of shift)
-    for name in ('gsm', 'gsf'):
-        impl_path = os.path.join(tdeed_root, 'model', 'impl', f'{name}.py')
-        impl_spec = importlib.util.spec_from_file_location(f'tdeed_impl_{name}', impl_path)
-        impl_mod = importlib.util.module_from_spec(impl_spec)
-        sys.modules[f'tdeed_impl_{name}'] = impl_mod
-        impl_spec.loader.exec_module(impl_mod)
+        # --- 3. Import T-DEED's model.model (triggers all its internal imports) ---
+        from model.model import TDEEDModel as _cls
 
-    # Patch shift's imports to point to our loaded modules
-    # shift.py does: from model.impl.gsm import _GSM; from model.impl.gsf import _GSF
-    # We need to make those available under model.impl.gsm / model.impl.gsf
-    # Easiest: temporarily inject into sys.modules
-    sys.modules['model.impl'] = type(sys)('model.impl')
-    sys.modules['model.impl.gsm'] = sys.modules['tdeed_impl_gsm']
-    sys.modules['model.impl.gsf'] = sys.modules['tdeed_impl_gsf']
+        # Keep a reference before cleanup
+        TDEEDModel = _cls
 
-    spec.loader.exec_module(tdeed_shift)
+    finally:
+        # --- 4. Remove T-DEED's model.* from sys.modules ---
+        for key in list(sys.modules.keys()):
+            if key == 'model' or key.startswith('model.'):
+                del sys.modules[key]
 
-    # Now load model.model, patching its imports
-    # model.model imports from model.modules and model.shift
-    sys.modules['model.modules'] = tdeed_modules
-    sys.modules['model.shift'] = tdeed_shift
+        # --- 5. Restore our own model.* modules ---
+        sys.modules.update(saved)
 
-    model_path = os.path.join(tdeed_root, 'model', 'model.py')
-    spec = importlib.util.spec_from_file_location('tdeed_model', model_path)
-    tdeed_model = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(tdeed_model)
+        # --- 6. Remove T-DEED root from sys.path ---
+        if tdeed_root in sys.path:
+            sys.path.remove(tdeed_root)
 
-    # Clean up: restore our own model.modules and model.shift
-    # by removing the overrides (Python will re-resolve from the package)
-    del sys.modules['model.modules']
-    del sys.modules['model.shift']
-    del sys.modules['model.impl']
-    del sys.modules['model.impl.gsm']
-    del sys.modules['model.impl.gsf']
-
-    return tdeed_model.TDEEDModel
+    return TDEEDModel
 
 
 class TeacherWrapper(nn.Module):
