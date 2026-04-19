@@ -170,6 +170,15 @@ def load_teacher(checkpoint_path, num_classes=12, clip_len=100,
 
     teacher_model = TDEEDModel(device=device, args=teacher_args)
     state_dict = torch.load(checkpoint_path, map_location=device)
+
+    # Check if checkpoint used double-head (multitask SN-BAS + SN-AS)
+    if '_pred_fine._fc1._fc_out.weight' in state_dict:
+        # Infer head sizes from checkpoint weights
+        n1 = state_dict['_pred_fine._fc1._fc_out.weight'].shape[0]
+        n2 = state_dict['_pred_fine._fc2._fc_out.weight'].shape[0]
+        teacher_model._model.update_pred_head(num_classes=[n1, n2])
+        teacher_args.pretrain = Namespace(num_classes=n2 - 1)
+
     teacher_model.load(state_dict)
 
     wrapper = TeacherWrapper(teacher_model, clip_len, num_classes)
