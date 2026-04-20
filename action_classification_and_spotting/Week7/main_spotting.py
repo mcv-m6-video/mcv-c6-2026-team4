@@ -72,6 +72,13 @@ def update_args(args, config):
     # Mixup
     args.mixup = config.get('mixup', False)
 
+    # Resume from checkpoint
+    args.resume_checkpoint = config.get('resume_checkpoint', None)
+    args.resume_epoch = config.get('resume_epoch', 0)
+    args.resume_best_loss = config.get('resume_best_loss', float('inf'))
+    args.resume_best_map12 = config.get('resume_best_map12', -float('inf'))
+    args.resume_best_map10 = config.get('resume_best_map10', -float('inf'))
+
     return args
 
 def get_lr_scheduler(args, optimizer, num_steps_per_epoch):
@@ -142,6 +149,11 @@ def main(args):
     # Model
     model = Model(args=args)
 
+    # Resume from a previous checkpoint
+    if args.resume_checkpoint:
+        print(f'Resuming from {args.resume_checkpoint} (starting at epoch {args.resume_epoch})')
+        model.load(torch.load(args.resume_checkpoint, map_location=args.device))
+
     # Load teacher for knowledge distillation
     if args.teacher_checkpoint and args.kd_alpha > 0:
         from model.teacher import load_teacher
@@ -168,20 +180,28 @@ def main(args):
             args, optimizer, num_steps_per_epoch)
 
         losses = []
-        best_loss = float('inf')
-        best_map12_val = -float('inf')
-        best_map10_val = -float('inf')
+        best_loss = args.resume_best_loss
+        best_map12_val = args.resume_best_map12
+        best_map10_val = args.resume_best_map10
         best_map12_05_val = -float('inf')
         best_map10_05_val = -float('inf')
-        best_epoch_loss = 0
-        best_epoch_map12 = 0
-        best_epoch_map10 = 0
-        last_improved = 0
-        epoch = 0
+        best_epoch_loss = args.resume_epoch
+        best_epoch_map12 = args.resume_epoch
+        best_epoch_map10 = args.resume_epoch
+        last_improved = args.resume_epoch
         train_start_time = time.time()
 
+        # Fast-forward LR scheduler to match the resume epoch so the cosine
+        # annealing curve continues from where it was interrupted.
+        if args.resume_epoch > 0:
+            steps_to_skip = args.resume_epoch * num_steps_per_epoch
+            print(f'Fast-forwarding LR scheduler by {steps_to_skip} steps '
+                  f'({args.resume_epoch} epochs × {num_steps_per_epoch} steps/epoch)')
+            for _ in range(steps_to_skip):
+                lr_scheduler.step()
+
         print('START TRAINING EPOCHS')
-        for epoch in range(epoch, num_epochs):
+        for epoch in range(args.resume_epoch, num_epochs):
 
             epoch_start_time = time.time()
 

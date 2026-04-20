@@ -18,7 +18,7 @@
   "num_classes": 12,
   "num_epochs": 35,
   "warm_up_epochs": 3,
-  "only_test": false,
+  "only_test": true,
   "device": "cuda",
   "num_workers": 4,
   "neck_architecture": "unet",
