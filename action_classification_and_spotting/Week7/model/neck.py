@@ -377,6 +377,135 @@ class TCNUNetNeck(nn.Module):
 
 
 # ---------------------------------------------------------------------------
+# TCN-block U-Net with additive skip connections
+# ---------------------------------------------------------------------------
+
+class TCNUNetAddNeck(nn.Module):
+    """
+    Identical to TCNUNetNeck except skip connections are **additive**
+    (upsample + skip) instead of concatenative (cat([upsample, skip])).
+
+    Because channels never double, no 1x1 projection conv is needed in the
+    decoder. This gives exactly the same parameter count as FlatTCNNeck
+    (both have num_levels*2+1 _TCNLevelBlock groups), making the two models
+    a controlled pair for the temporal-downsampling ablation.
+
+    Parameters: same as TCNUNetNeck.
+    """
+
+    def __init__(self, feat_dim, hidden_dim=None, num_levels=2,
+                 kernel_size=3, dropout=0.0, num_dilations=3):
+        super().__init__()
+        hidden_dim = hidden_dim or feat_dim
+
+        self._proj_in = (nn.Conv1d(feat_dim, hidden_dim, 1)
+                         if hidden_dim != feat_dim else nn.Identity())
+
+        self._enc = nn.ModuleList([
+            _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations)
+            for _ in range(num_levels)
+        ])
+        self._bottleneck = _TCNLevelBlock(
+            hidden_dim, kernel_size, dropout, num_dilations)
+        self._dec = nn.ModuleList([
+            _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations)
+            for _ in range(num_levels)
+        ])
+
+        self._out_dim = hidden_dim
+
+    def forward(self, x):                             # (B, T, D)
+        x = x.permute(0, 2, 1)                        # (B, D, T)
+        x = self._proj_in(x)
+
+        skips = []
+        for enc in self._enc:
+            x = enc(x)
+            skips.append(x)
+            x = F.max_pool1d(x, 2)
+
+        x = self._bottleneck(x)
+
+        for dec, skip in zip(self._dec, reversed(skips)):
+            x = F.interpolate(x, size=skip.shape[-1],
+                              mode='linear', align_corners=False)
+            x = x + skip                              # additive — no channel doubling
+            x = dec(x)
+
+        return x.permute(0, 2, 1)                    # (B, T, hidden_dim)
+
+    @property
+    def out_dim(self):
+        return self._out_dim
+
+
+# ---------------------------------------------------------------------------
+# Flat TCN (same blocks as TCNUNet but no temporal downsampling)
+# ---------------------------------------------------------------------------
+
+class FlatTCNNeck(nn.Module):
+    """
+    TCNUNetNeck with pooling and upsampling removed — the only difference.
+
+    Keeps the full U-Net shape: encoder levels write skip connections,
+    decoder levels read them via concatenation + 1x1 projection. Because
+    temporal resolution never changes, skip tensors have the same size as
+    the decoder input so no interpolation is needed. Parameter count is
+    therefore identical to TCNUNetNeck with the same hyperparameters,
+    making the two a controlled pair for the temporal-downsampling ablation.
+
+    Parameters: same as TCNUNetNeck.
+    """
+
+    def __init__(self, feat_dim, hidden_dim=None, num_levels=2,
+                 kernel_size=3, dropout=0.0, num_dilations=3):
+        super().__init__()
+        hidden_dim = hidden_dim or feat_dim
+
+        self._proj_in = (nn.Conv1d(feat_dim, hidden_dim, 1)
+                         if hidden_dim != feat_dim else nn.Identity())
+
+        self._enc = nn.ModuleList([
+            _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations)
+            for _ in range(num_levels)
+        ])
+        self._bottleneck = _TCNLevelBlock(
+            hidden_dim, kernel_size, dropout, num_dilations)
+        self._dec = nn.ModuleList([
+            nn.Sequential(
+                nn.Conv1d(hidden_dim * 2, hidden_dim, 1),
+                _TCNLevelBlock(hidden_dim, kernel_size, dropout, num_dilations),
+            )
+            for _ in range(num_levels)
+        ])
+
+        self._out_dim = hidden_dim
+
+    def forward(self, x):                             # (B, T, D)
+        x = x.permute(0, 2, 1)                        # (B, D, T)
+        x = self._proj_in(x)
+
+        skips = []
+        for enc in self._enc:
+            x = enc(x)
+            skips.append(x)
+            # no max_pool — resolution stays at T throughout
+
+        x = self._bottleneck(x)
+
+        for dec, skip in zip(self._dec, reversed(skips)):
+            # no interpolate — skip is already the same size as x
+            x = torch.cat([x, skip], dim=1)
+            x = dec(x)
+
+        return x.permute(0, 2, 1)                    # (B, T, hidden_dim)
+
+    @property
+    def out_dim(self):
+        return self._out_dim
+
+
+# ---------------------------------------------------------------------------
 # Transformer
 # ---------------------------------------------------------------------------
 
@@ -451,7 +580,9 @@ _NECK_REGISTRY = {
     'transformer': TransformerNeck,
     'unet':        UNetNeck,
     'unet_attn':   AttentionBottleneckUNetNeck,
-    'unet_tcn':    TCNUNetNeck,
+    'unet_tcn':     TCNUNetNeck,
+    'unet_tcn_add': TCNUNetAddNeck,
+    'flat_tcn':     FlatTCNNeck,
 }
 
 
