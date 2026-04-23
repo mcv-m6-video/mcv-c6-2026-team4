@@ -1,0 +1,34 @@
+{
+  "frame_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_frames/398x224",
+  "save_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025_savedata",
+  "labels_dir": "/home/msiau/data/tmp/amarcos/SoccerNet/SN-BAS-2025",
+
+  "--frame_dir": "/media/arnau-marcos-almansa/Ubuntu Data/MCV/C6/SoccerNet/frames/398x224",
+  "--save_dir": "/media/arnau-marcos-almansa/Ubuntu Data/MCV/C6/soccer_savedata",
+  "--labels_dir": "/media/arnau-marcos-almansa/Ubuntu Data/MCV/C6/SoccerNet/SN-BAS-2025",
+
+  "store_mode": "load",
+  "task": "spotting",
+  "batch_size": 4,
+  "clip_len": 75,
+  "stride": 2,
+  "dataset": "soccernetball",
+  "epoch_num_frames": 500000,
+  "feature_arch": "x3d_m",
+  "learning_rate": 0.0002,
+  "num_classes": 12,
+  "num_epochs": 35,
+  "warm_up_epochs": 3,
+  "only_test": false,
+  "device": "cuda",
+  "num_workers": 4,
+  "neck_architecture": "unet",
+  "neck_parameters": {
+    "hidden_dim": 432,
+    "num_levels": 2,
+    "kernel_size": 5,
+    "dropout": 0.1
+  },
+  "map_eval_freq": 2,
+  "early_stop_patience": 10
+}
