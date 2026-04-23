@@ -25,3 +25,5 @@ Ball Action Classification and Spotting
   - [README](action_classification_and_spotting/Week5/README.md)
 - [Week 6](action_classification_and_spotting/Week6/)
   - [README](action_classification_and_spotting/Week6/README.md)
+- [Week 7](action_classification_and_spotting/Week7/)
+  - [README](action_classification_and_spotting/Week7/README.md)
