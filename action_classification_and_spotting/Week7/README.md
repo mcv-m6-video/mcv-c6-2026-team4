@@ -4,6 +4,8 @@
 
 Best model: **X3D-M + BiGRU (hidden=432, 2 layers)** — mAP10@1s = **45.75**, mAP10@0.5s = **40.68** (35 epochs, one-hot labels).
 
+[Checkpoint](https://drive.google.com/file/d/18grTVhZ3OxxeLJK_PjsY8JKhjXrDcyaR/view?usp=drive_link)
+
 # Project 2 (Task 2) @ C6 - Video Analysis
 
 Action spotting on the SoccerNet Ball Action Spotting 2025 (SN-BAS-2025) dataset.
@@ -67,23 +69,23 @@ data/soccernetball/      # Dataset metadata and class list
 
 ## Configuration reference
 
-| Key                   | Type   | Description                                                                    |
-| --------------------- | ------ | ------------------------------------------------------------------------------ |
-| `feature_arch`        | str    | Backbone architecture (see below)                                              |
-| `neck_architecture`   | str    | Temporal neck type: `identity`, `gru`, `tcn`, `transformer`, `unet`, `unet_attn`, `unet_tcn`, `unet_tcn_add`, `flat_tcn` |
-| `neck_parameters`     | dict   | Neck-specific kwargs                                                           |
-| `clip_len`            | int    | Frames per clip                                                                |
-| `stride`              | int    | Frame sampling stride (higher = lower effective FPS)                           |
-| `focal_gamma`         | float  | Focal loss gamma; `0.0` disables focal loss (uses weighted CE)                 |
-| `focal_alpha`         | float  | Per-class weight for action classes in focal/weighted CE loss                  |
-| `label_mode`          | str    | `"one_hot"` (default) or `"gaussian"` — label type for supervision            |
-| `label_sigma`         | float  | Gaussian σ in frames (used when `label_mode="gaussian"`)                       |
-| `mixup`               | bool   | Enable Mixup augmentation during training                                      |
-| `map_eval_freq`       | int    | Evaluate mAP on validation every N epochs                                      |
-| `epoch_num_frames`    | int    | Total frames sampled per epoch (controls dataset size)                         |
-| `store_mode`          | str    | `store` to precompute clips, `load` to reuse them                              |
-| `warm_up_epochs`      | int    | Epochs for linear LR warm-up before cosine annealing                          |
-| `early_stop_patience` | int    | Stop training after N epochs without mAP improvement                          |
+| Key                   | Type  | Description                                                                                                              |
+| --------------------- | ----- | ------------------------------------------------------------------------------------------------------------------------ |
+| `feature_arch`        | str   | Backbone architecture (see below)                                                                                        |
+| `neck_architecture`   | str   | Temporal neck type: `identity`, `gru`, `tcn`, `transformer`, `unet`, `unet_attn`, `unet_tcn`, `unet_tcn_add`, `flat_tcn` |
+| `neck_parameters`     | dict  | Neck-specific kwargs                                                                                                     |
+| `clip_len`            | int   | Frames per clip                                                                                                          |
+| `stride`              | int   | Frame sampling stride (higher = lower effective FPS)                                                                     |
+| `focal_gamma`         | float | Focal loss gamma; `0.0` disables focal loss (uses weighted CE)                                                           |
+| `focal_alpha`         | float | Per-class weight for action classes in focal/weighted CE loss                                                            |
+| `label_mode`          | str   | `"one_hot"` (default) or `"gaussian"` — label type for supervision                                                       |
+| `label_sigma`         | float | Gaussian σ in frames (used when `label_mode="gaussian"`)                                                                 |
+| `mixup`               | bool  | Enable Mixup augmentation during training                                                                                |
+| `map_eval_freq`       | int   | Evaluate mAP on validation every N epochs                                                                                |
+| `epoch_num_frames`    | int   | Total frames sampled per epoch (controls dataset size)                                                                   |
+| `store_mode`          | str   | `store` to precompute clips, `load` to reuse them                                                                        |
+| `warm_up_epochs`      | int   | Epochs for linear LR warm-up before cosine annealing                                                                     |
+| `early_stop_patience` | int   | Stop training after N epochs without mAP improvement                                                                     |
 
 ## Available backbones (`feature_arch`)
 
@@ -101,17 +103,17 @@ All 3-D backbones preserve the temporal dimension (T' = T) so that per-frame pre
 
 ## Available neck architectures
 
-| `neck_architecture` | Key `neck_parameters`                                                       | Notes                                               |
-| ------------------- | --------------------------------------------------------------------------- | --------------------------------------------------- |
-| `identity`          | —                                                                           | No temporal modeling; per-frame classification only |
-| `gru`               | `hidden_dim`, `num_layers`, `bidirectional`, `dropout`                      | Bidirectional by default                            |
-| `tcn`               | `num_layers`, `kernel_size`, `dropout`                                      | Dilated residual 1-D convolutions                   |
-| `transformer`       | `num_layers`, `num_heads`, `dim_feedforward`, `dropout`                     | Pre-norm with sinusoidal positional encoding        |
-| `unet`              | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`                        | 1-D temporal U-Net with max-pool / interpolate      |
-| `unet_attn`         | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`, `num_heads`, `attn_layers` | U-Net with transformer attention at bottleneck |
-| `unet_tcn`          | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`, `num_dilations`       | TCN blocks inside U-Net encoder/decoder (concat skips) |
-| `unet_tcn_add`      | same as `unet_tcn`                                                          | `unet_tcn` with additive skip connections           |
-| `flat_tcn`          | same as `unet_tcn`                                                          | `unet_tcn` without temporal pooling (ablation)      |
+| `neck_architecture` | Key `neck_parameters`                                                            | Notes                                                  |
+| ------------------- | -------------------------------------------------------------------------------- | ------------------------------------------------------ |
+| `identity`          | —                                                                                | No temporal modeling; per-frame classification only    |
+| `gru`               | `hidden_dim`, `num_layers`, `bidirectional`, `dropout`                           | Bidirectional by default                               |
+| `tcn`               | `num_layers`, `kernel_size`, `dropout`                                           | Dilated residual 1-D convolutions                      |
+| `transformer`       | `num_layers`, `num_heads`, `dim_feedforward`, `dropout`                          | Pre-norm with sinusoidal positional encoding           |
+| `unet`              | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`                             | 1-D temporal U-Net with max-pool / interpolate         |
+| `unet_attn`         | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`, `num_heads`, `attn_layers` | U-Net with transformer attention at bottleneck         |
+| `unet_tcn`          | `hidden_dim`, `num_levels`, `kernel_size`, `dropout`, `num_dilations`            | TCN blocks inside U-Net encoder/decoder (concat skips) |
+| `unet_tcn_add`      | same as `unet_tcn`                                                               | `unet_tcn` with additive skip connections              |
+| `flat_tcn`          | same as `unet_tcn`                                                               | `unet_tcn` without temporal pooling (ablation)         |
 
 ## Evaluation metrics
 
