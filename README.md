@@ -1,5 +1,7 @@
 # mcv-c6-2026-team4
 
+Link to the Google Slides Presentation -> [BAS](https://docs.google.com/presentation/d/1zdGdFvbrKRJzGNl6gJtwU1kIJAYnXJ_m3xGBl2JUSWQ/edit?usp=sharing)
+
 Link to the Google Slides Presentation -> [MTMC](https://docs.google.com/presentation/d/1GIh7ZsBZdk1gFRL0EqgLg5Hli3SCXq974R0326KX4UI/edit?usp=sharing)
 
 ## Authors
